@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>LPecPrepIcon.png</file>
+    </qresource>
+</RCC>
