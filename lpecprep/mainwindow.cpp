@@ -48,21 +48,42 @@ MainWindow::MainWindow() :
 {
     ui->setupUi(this);
 
-    ui->toolsWidget->setIconSize(QSize(48, 48));
-    auto t0 = new QLabel("T0", this);
-    ui->toolsWidget->insertTab(0, t0, QIcon(":/icons/ekos_setup.png"), "Tab1");
-    auto t1 = new QLabel("T1", this);
-    ui->toolsWidget->insertTab(1, t1, QIcon(":/icons/ekos_setup.png"), "Tab1");
-    auto t2 = new QLabel("T2", this);
-    ui->toolsWidget->insertTab(2, t2, QIcon(":/icons/ekos_setup.png"), "Tab2");
+    //ui->toolsWidget->setIconSize(QSize(48, 48));
+    int index = 0;
+    QString label = "Periodic Error Analysis";
+    QWidget *widget = new QLabel(label, this);
+    ui->toolsWidget->insertTab(index, widget, QIcon(), label);
+    ui->toolsWidget->setTabText(index, label);
+    ui->toolsWidget->setTabEnabled(index, true);
+    index++;
 
-    ui->toolsWidget->setTabText(0, "Tab0");
-    ui->toolsWidget->setTabText(1, "Tab1");
-    ui->toolsWidget->setTabText(2, "Tab2");
+    label = "Periodic Error Correction";
+    widget = new QLabel(label, this);
+    ui->toolsWidget->insertTab(index, widget, QIcon(), label);
+    ui->toolsWidget->setTabText(index, label);
+    ui->toolsWidget->setTabEnabled(index, true);
+    index++;
 
-    ui->toolsWidget->setTabEnabled(0, true);
-    ui->toolsWidget->setTabEnabled(1, true);
-    ui->toolsWidget->setTabEnabled(2, true);
+    label = "PEC Curve Arithmatic";
+    widget = new QLabel(label, this);
+    ui->toolsWidget->insertTab(index, widget, QIcon(), label);
+    ui->toolsWidget->setTabText(index, label);
+    ui->toolsWidget->setTabEnabled(index, true);
+    index++;
+
+    label = "Frequency Spectrum";
+    widget = new QLabel(label, this);
+    ui->toolsWidget->insertTab(index, widget, QIcon(), label);
+    ui->toolsWidget->setTabText(index, label);
+    ui->toolsWidget->setTabEnabled(index, true);
+    index++;
+
+    label = "Simulation";
+    widget = new QLabel(label, this);
+    ui->toolsWidget->insertTab(index, widget, QIcon(), label);
+    ui->toolsWidget->setTabText(index, label);
+    ui->toolsWidget->setTabEnabled(index, true);
+    index++;
 
     //ui->toolsWidget->tabBar()->setTabToolTip(0, QString("Setup"));
     //ui->toolsWidget->tabBar()->setTabToolTip(1, QString("Scheduler"));
