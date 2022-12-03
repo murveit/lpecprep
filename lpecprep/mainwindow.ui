@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>StellarSolver Astrometry Tester</string>
+   <string>LPecPrep</string>
   </property>
      <widget class="QTabWidget" name="toolsWidget">
       <property name="sizePolicy">

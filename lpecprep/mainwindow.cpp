@@ -1,4 +1,4 @@
-/*  MainWindow for StellarSolver Tester Application, developed by Robert Lancaster, 2020
+/*  MainWindow for LPecPrep
 
     This application is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public

@@ -18,6 +18,7 @@ class Analysis : public QWidget, public Ui::Analysis
     signals:
 
     private:
+        void addStuff();
 
 };
 
