@@ -72,6 +72,7 @@ set(LPecPrepMain_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/resources.qrc
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
     )
 
 qt5_wrap_ui(LPecPrepui_SRCS
