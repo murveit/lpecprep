@@ -36,15 +36,17 @@ include(GNUInstallDirs)
 include_directories( "${CMAKE_CURRENT_BINARY_DIR}")
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/lpecprep")
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source")
 
 find_package(GSL REQUIRED)
-find_package(Qt5 5.4 REQUIRED COMPONENTS Gui Widgets Core Concurrent Network)
+find_package(Qt5 5.4 REQUIRED COMPONENTS Gui Widgets Core PrintSupport Concurrent Network)
 
 if (GSL_FOUND)
   include_directories(${GSL_INCLUDE_DIR})
 endif (GSL_FOUND)
 
 set(LPecPrep_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source/qcustomplot.cpp
    )
 
 set(ALL_SRCS
@@ -58,6 +60,7 @@ target_link_libraries(lpecprep
     Qt5::Network
     Qt5::Widgets
     Qt5::Concurrent
+    Qt5::PrintSupport    
     )
 
 set_target_properties(lpecprep PROPERTIES VERSION ${LPecPrep_VERSION_STRING} SOVERSION ${LPecPrep_SOVERSION} OUTPUT_NAME lpecprep)
@@ -68,10 +71,12 @@ set(LPecPrepMain_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/resources.qrc
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
     )
 
 qt5_wrap_ui(LPecPrepui_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.ui
     )
 
 add_executable(LPecPrep ${LPecPrepMain_SRCS} ${LPecPrepui_SRCS} ${LPecPrepApp_ICON})

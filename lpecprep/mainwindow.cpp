@@ -40,7 +40,10 @@
 #include <QtConcurrent>
 #include <QToolTip>
 #include <QtGlobal>
+#include "qcustomplot.h"
 #include "version.h"
+#include "analysis.h"
+
 
 MainWindow::MainWindow() :
     QMainWindow(),
@@ -51,7 +54,7 @@ MainWindow::MainWindow() :
     //ui->toolsWidget->setIconSize(QSize(48, 48));
     int index = 0;
     QString label = "Periodic Error Analysis";
-    QWidget *widget = new QLabel(label, this);
+    QWidget *widget = new Analysis(); ///QLabel(label, this);
     ui->toolsWidget->insertTab(index, widget, QIcon(), label);
     ui->toolsWidget->setTabText(index, label);
     ui->toolsWidget->setTabEnabled(index, true);
