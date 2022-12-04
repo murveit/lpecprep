@@ -49,6 +49,7 @@ MainWindow::MainWindow() :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setStyleSheet("background-color: #DDDDDD;");
 
     //ui->toolsWidget->setIconSize(QSize(48, 48));
     int index = 0;

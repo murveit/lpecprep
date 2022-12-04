@@ -29,6 +29,7 @@ Analysis::Analysis()
 
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
+    filenameLabel->setText(filename);
 
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
 
@@ -123,13 +124,12 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
         for (const auto &v : p)
             plot->addData(v.time, v.signal);
     }
-    const double yRange = maxSample - minSample;
+
     overlapPlot->xAxis->setRange(0, periods[0].size());
     if (linearRegressionCB->isChecked())
         overlapPlot->yAxis->setRange(minLrSample, maxLrSample);
     else
         overlapPlot->yAxis->setRange(minSample, maxSample);
-
 }
 
 QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) const
@@ -183,12 +183,11 @@ void Analysis::startPlots()
 
 void Analysis::finishPlots()
 {
-    const double xRange = maxTime - minTime;
     const double yRange = maxSample - minSample;
-    pePlot->xAxis->setRange(minTime - xRange * .2, maxTime + xRange * .2);
+    pePlot->xAxis->setRange(minTime, maxTime);
     pePlot->yAxis->setRange(minSample - yRange * .2, maxSample + yRange * .2);
-
     pePlot->replot();
+
     overlapPlot->replot();
 }
 
@@ -239,7 +238,6 @@ PECData Analysis::linearRegress(const PECData &data)
         double newSignal = s.signal - (slope * s.time) - intercept;
         if (newSignal > maxLrSample) maxLrSample = newSignal;
         if (newSignal < minLrSample) minLrSample = newSignal;
-        double t = data[i].time;
         regressed.push_back(PECSample(s.time, newSignal));
         // I dropped the computation of deltaPos and DeltaNeg here
     }
