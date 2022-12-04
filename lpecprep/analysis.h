@@ -22,11 +22,18 @@ class Analysis : public QWidget, public Ui::Analysis
         void plotData(const PECData &data, int plot);
         void displayPlots();
         void initPlots();
-        PECData linearRegress(const PECData &data) const;
+        void setDefaults();
+        void clearPlots();
+        PECData linearRegress(const PECData &data);
         void startPlots();
         void finishPlots();
+        void doPlots();
+        QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
+        void plotPeriods(const QVector<PECData> &data);
 
-        double minTime = 0, maxTime = 0, minSample = 0, maxSample = 0;
+        double minTime = 0, maxTime = 0, minSample = 0, maxSample = 0, minLrSample = 0, maxLrSample = 0;
+
+        PECData rawData;
 
         // Overlayed plot indeces on pePlot.
         int RAW_PLOT = 0;

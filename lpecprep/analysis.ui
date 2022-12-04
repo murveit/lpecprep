@@ -84,7 +84,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QCheckBox" name="rawTrendCB">
+      <widget class="QCheckBox" name="trendCB">
        <property name="text">
         <string>Raw Trend</string>
        </property>
@@ -122,7 +122,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QSpinBox" name="periodSpinbox"/>
+      <widget class="QSpinBox" name="periodSpinbox">
+       <property name="minimum">
+        <number>2</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
