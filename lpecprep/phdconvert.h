@@ -5,13 +5,17 @@
 #include <QString>
 #include <QDateTime>
 
+#include "structs.h"
+
 class PhdConvert : public QObject
 {
         Q_OBJECT
 
     public:
-        PhdConvert(const QString &filename);
+        PhdConvert(const QString &filename, const Params &p);
         ~PhdConvert();
+
+        const PECData &getData() const { return data; }
 
     public slots:
 
@@ -21,7 +25,7 @@ class PhdConvert : public QObject
 
     private:
         void convert(const QString &filename);
-        void processInputLine(const QString &line);
+        void processInputLine(const QString &line, RaDec channel);
         void resetData(const QDateTime &startTime);
         void setColumnIndeces();
 
@@ -31,8 +35,12 @@ class PhdConvert : public QObject
         QStringList colList;
         // Indeces of the phd2 sample values in a logfile line.
         int dxIndex = -1, dyIndex, raRawIndex, decRawIndex;
-        double sizeX = 0, sizeY = 0;
-        int linesRead = 0;
+
+        // It just extracts one sequence (the final one) from the file.
+        PECData data;
+
+        const Params params;
+
 };
 
 #endif // PHDCONVERT

@@ -44,7 +44,6 @@
 #include "version.h"
 #include "analysis.h"
 
-
 MainWindow::MainWindow() :
     QMainWindow(),
     ui(new Ui::MainWindow)

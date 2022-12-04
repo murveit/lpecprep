@@ -16,7 +16,7 @@ QDateTime getStartTime(const QString &line)
 
 }
 
-PhdConvert::PhdConvert(const QString &filename)
+PhdConvert::PhdConvert(const QString &filename, const Params &p) : params(p)
 {
     convert(filename);
 }
@@ -37,12 +37,12 @@ void PhdConvert::convert(const QString &filename)
         {
             QString line = in.readLine();
             if (line.size() == 0) continue;
-            processInputLine(line);
+            processInputLine(line, RA);
         }
         inputFile.close();
+        fprintf(stderr, "Read %d data points from %s\n", data.size(), filename.toLatin1().data());
     }
 }
-
 
 void PhdConvert::setColumnIndeces()
 {
@@ -52,10 +52,12 @@ void PhdConvert::setColumnIndeces()
     decRawIndex = colList.indexOf("DECRawDistance");
 }
 
-void PhdConvert::processInputLine(const QString &line)
+void PhdConvert::processInputLine(const QString &line, RaDec channel)
 {
+    ////fprintf(stderr, "processing %s\n", line.toLatin1().data());
     if (line.contains("Guiding Begins"))
     {
+        ////fprintf(stderr, " Guiding Begins\n");
         // reset the data
         QDateTime startTime = getStartTime(line);
         if (startTime.isValid())
@@ -65,62 +67,86 @@ void PhdConvert::processInputLine(const QString &line)
     }
     else if (line.contains("Guiding Ends"))
     {
-        fprintf(stderr, "Guiding ends after reading %d lines\n", linesRead);
+        ////fprintf(stderr, " Guiding ends after reading %d lines\n", data.size());
     }
     else if (line.startsWith("Frame,"))
     {
+        ////fprintf(stderr, " Column Indeces\n");
+
         // column headings
         colList = line.split(',');
         setColumnIndeces();
     }
     else
     {
-        if (dxIndex < 0 || sizeX == 0 || sizeY == 0)
+        if (dxIndex < 0 || params.sizeX == 0 || params.sizeY == 0 || params.dec == 0.0 || params.fl == 0.0)
         {
-            fprintf(stderr, "  aborting %d %f %f\n", dxIndex, sizeX, sizeY);
+            fprintf(stderr, "  aborting dxIndex %d sizeX %f sizeY %f fl %f dec %f\n",
+                    dxIndex, params.sizeX, params.sizeY, params.fl, params.dec);
             return;
         }
         QStringList cols = line.split(',');
         if (cols.size() > 0)
         {
             bool ok;
-            int index = cols[0].toUInt(&ok);
+            const int index = cols[0].toUInt(&ok);
             if (!ok || index < 0) return;
-            double timeOffset = cols[1].toDouble(&ok);
+            ////fprintf(stderr, " Data line\n");
+            const double timeOffset = cols[1].toDouble(&ok);
             if (!ok) return;
-            double dx = cols[dxIndex].toDouble(&ok);
+            const double dx = cols[dxIndex].toDouble(&ok);
             if (!ok) return;
-            double dy = cols[dyIndex].toDouble(&ok);
+            const double dy = cols[dyIndex].toDouble(&ok);
             if (!ok) return;
-            double raRaw = cols[raRawIndex].toDouble(&ok) * sizeX;
+            const double raRaw = cols[raRawIndex].toDouble(&ok);
             if (!ok) return;
-            double decRaw = cols[decRawIndex].toDouble(&ok) * sizeY;
+            const double decRaw = cols[decRawIndex].toDouble(&ok);
             if (!ok) return;
-            linesRead++;
-            //fprintf(stderr, "%d %f %f %f %f\n", index, dx, dy, raRaw, decRaw);
-#if 0
-            up to this...
-            Select Case datatype
-            Case 0
-            RA Error in arcsecs
-#endif
 
+            const double raDistance = raRaw * params.sizeX;
+            const double decDistance = decRaw * params.sizeY;
 
+            double signal = 0;
+
+            if (channel == RA)
+            {
+                // RA Error in arcseconds
+                signal = 3.438 * 60 * raDistance / params.fl;
+                signal = signal / params.dec;
+            }
+            else
+            {
+                // DEC Error in arcseconds
+                signal = 3.438 * 60 * decDistance / params.fl;
+            }
+
+            const double interval = data.empty() ? 0 : (timeOffset - data.last().time);
+            if (interval > 1)
+            {
+                // Undersampled, so we must extrapolate samples
+                double sinc = (signal - data.last().signal) / interval;
+                for (int j = 1; j <= int(interval); j++)
+                {
+                    PECSample newData(data.last().time + 1, data.last().signal + sinc);
+                    data.push_back(newData);
+                }
+            }
+            else
+            {
+                PECSample newData(timeOffset, signal);
+                data.push_back(newData);
+            }
         }
     }
 }
 
+
 void PhdConvert::resetData(const QDateTime &start)
 {
     startTime = start;
+    data.clear();
     if (!startTime.isValid())
         fprintf(stderr, "Time not valid!\n");
     fprintf(stderr, "Resetting start: %s\n", startTime.toString().toLatin1().data());
     startTime = start;
-    linesRead = 0;
-
-    // hacking this in for now
-    sizeX = 3.8;
-    sizeY = 3.8;
-
 }
