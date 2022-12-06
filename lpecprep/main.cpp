@@ -2,11 +2,6 @@
 #include "mainwindow.h"
 #include <QApplication>
 
-#include "phdconvert.h"
-#include "fftutil.h"
-
-#include "analysis.h"
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

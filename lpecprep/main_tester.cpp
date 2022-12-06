@@ -1,11 +1,8 @@
 #include <stdio.h>
-#include "mainwindow.h"
-#include <QApplication>
 
 #include "phdconvert.h"
 #include "fftutil.h"
-
-#include "analysis.h"
+#include <QElapsedTimer>
 
 PECData linearRegress(const PECData &data)
 {
@@ -130,13 +127,15 @@ void plotPeaks(const PECData &samples)
         if (isinf(power))
             fprintf(stderr, "%d power infinity\n", index);
 
-        if (power > maxPower) {
-          mpIndex = index;
-          maxPower = power;
+        if (power > maxPower)
+        {
+            mpIndex = index;
+            maxPower = power;
         }
     }
 
-    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f index %d maxPeriod %.2f\n", numFreqs, maxPower, mpIndex, 1.0 / freqPerSample);
+    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f index %d maxPeriod %.2f\n", numFreqs, maxPower, mpIndex,
+            1.0 / freqPerSample);
     delete[] fftData;
 }
 
@@ -156,6 +155,6 @@ int main(int argc, char *argv[])
     plotPeaks(data);
     plotPeaks(data);
     plotPeaks(data);
-    
-  return 0;
+
+    return 0;
 }

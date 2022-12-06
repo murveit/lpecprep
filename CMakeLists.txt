@@ -47,6 +47,8 @@ endif (GSL_FOUND)
 
 set(LPecPrep_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source/qcustomplot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/fftutil.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
    )
 
 set(ALL_SRCS
@@ -72,8 +74,6 @@ set(LPecPrepMain_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/resources.qrc
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/fftutil.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
     )
 
 qt5_wrap_ui(LPecPrepui_SRCS
@@ -93,3 +93,21 @@ target_link_libraries(LPecPrep
     Qt5::Concurrent
     )
 
+  
+set(Tester_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/main_tester.cpp
+    )
+
+add_executable(Tester ${Tester_SRCS} ${LPecPrepApp_ICON})
+
+target_link_libraries(Tester
+    lpecprep
+    ${GSL_LIBRARIES}
+    Qt5::Gui
+    Qt5::Widgets
+    Qt5::Core
+    Qt5::Network
+    Qt5::Concurrent
+    )
+
+  
