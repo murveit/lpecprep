@@ -4,6 +4,8 @@
 #include "ui_analysis.h"
 #include "fftutil.h"
 
+//////////#define GRAPHICS
+
 namespace
 {
 
@@ -22,15 +24,20 @@ int initPlot(QCustomPlot *plot, QCPAxis *yAxis, QCPGraph::LineStyle lineStyle,
 
 Analysis::Analysis()
 {
+#ifdef GRAPHICS
     setupUi(this);
     initPlots();
     setDefaults();
+
+#endif
 
     startPlots(); //// where does this go?
 
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
+#ifdef GRAPHICS
     filenameLabel->setText(filename);
+#endif
 
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
 
@@ -73,23 +80,33 @@ void Analysis::clearPlots()
 
 void Analysis::doPlots()
 {
+#ifdef GRAPHICS
     clearPlots();
 
     if (rawCB->isChecked())
         plotData(rawData, RAW_PLOT);
+#endif
 
     PECData data;
-
+#ifdef GRAPHICS
     if (linearRegressionCB->isChecked())
+#else
+    if (true)
+#endif
     {
         data = linearRegress(rawData);
+#ifdef GRAPHICS
         if (trendCB->isChecked())
             plotData(data, TREND_PLOT);
+#endif
     }
     else
         data = rawData;
 
+    fprintf(stderr, "First plot peaks\n");
     plotPeaks(data);
+    //fprintf(stderr, "2nd plot peaks\n");
+    //plotPeaks(data);
 
 #if 0
     PECData noiseData = getNoiseData();
@@ -101,6 +118,7 @@ void Analysis::doPlots()
         plotData(smoothedData, TREND_PLOT);
 #endif
 
+#ifdef GRAPHICS
     int pecPeriod = periodSpinbox->value();
     constexpr int maxPeriodPlots = 50;
     if (pecPeriod > 1 && data.size() / pecPeriod <= maxPeriodPlots)
@@ -108,8 +126,8 @@ void Analysis::doPlots()
         QVector<PECData> periodData = separatePecPeriods(data, pecPeriod);
         plotPeriods(periodData);
     }
-
     finishPlots();
+#endif
 }
 
 void Analysis::plotPeriods(const QVector<PECData> &periods)
@@ -141,60 +159,112 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
 
 void Analysis::plotPeaks(const PECData &samples)
 {
-    const int size = 32 * 1024;
-    //const int size = samples.size();
+    fprintf(stderr, "plotPeaks with %d samples\n", samples.size());
 
+    constexpr int fftSize = 2 * 1024;
+    const int sampleSize = samples.size();
+
+#ifdef GRAPHICS
     peaksPlot->clearGraphs();
-    if (samples.size() <= 2) return;
-
-    // This is too large to allocate on the stack.
-    double *data = new double[size];
-    double *dptr = data;
-
-    for (int i = 0; i < samples.size(); ++i)
-        *dptr++ = samples[i].signal;
-    for (int i = samples.size(); i < size; ++i)
-        *dptr = 0.0;
-
-    FFTUtil fft(size);
-    QElapsedTimer timer;
-    timer.start();
-    fft.forward(data);
-    fprintf(stderr, "FFT of size %d took %lldms\n", size, timer.elapsed());
+#endif
+    if (sampleSize <= 2) return;
 
     /*
-    fft.inverse(data);
-    for (int i = 0; i < size; ++i)
-        fprintf(stderr, "%d: %.3f\n", i, data[i]);
+    fprintf(stderr, " test1\n");
+    FFTUtil::test();
+    fprintf(stderr, " test2\n");
+    FFTUtil::test();
+    fprintf(stderr, " test3\n");
+    FFTUtil::test();
+    fprintf(stderr, " test4\n");
+    FFTUtil::test();
     return;
     */
 
-    const int numFreqs = 1 + size / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
-    const double timePerSample = (samples.last().time - samples[0].time) / (samples.size() - 1);
+#ifdef DEBUG
+    fprintf(stderr, "FFT Input:\n");
+    for (int i = 0; i < sampleSize; ++i)
+    {
+        fprintf(stderr, "%d %.3f ", i, samples[i].signal);
+        if (i % 10 == 9) fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+#endif
+
+    // This is too large to allocate on the stack.
+    double *fftData = new double[fftSize];
+    double *dptr = fftData;
+
+    for (int i = 0; i < sampleSize; ++i)
+        *dptr++ = samples[i].signal;
+    for (int i = sampleSize; i < fftSize; ++i)
+        *dptr = 0.0;
+
+    FFTUtil fft(fftSize);
+    QElapsedTimer timer;
+    timer.start();
+    fft.forward(fftData);
+    fprintf(stderr, "FFT of size %d took %lldms\n", fftSize, timer.elapsed());
+
+#ifdef DEBUG
+    fprintf(stderr, "FFT Output:\n");
+    for (int i = 0; i < fftSize; ++i)
+    {
+        fprintf(stderr, "%d %.3f ", i, fftData[i]);
+        if (i % 10 == 9) fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+#endif
+
+    /*
+    fft.inverse(fftData);
+    for (int i = 0; i < size; ++i)
+        fprintf(stderr, "%d: %.3f\n", i, fftData[i]);
+    return;
+    */
+
+    const int numFreqs = 1 + fftSize / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
+    const double timePerSample = (samples.last().time - samples[0].time) / (sampleSize - 1);
     const double maxFreq = 0.5 / timePerSample;
     const double freqPerSample = maxFreq / numFreqs;
     fprintf(stderr, "numFreqs = %d fpS = %f\n", numFreqs, freqPerSample);/////////////
     double maxPower = 0.0;
 
     QColor color = Qt::red;
+#ifdef GRAPHICS
     int plt = initPlot(peaksPlot, peaksPlot->yAxis, QCPGraph::lsLine, color, "");
     auto plot = peaksPlot->graph(plt);
     fprintf(stderr, "Plot %d\n", plt);
+#endif
 
-    for (int index = numFreqs - 1; index >= 0; index--)
+    for (int index = numFreqs; index >= 0; index--)
     {
         const double freq = index * freqPerSample;
-        const double imaginary = (index == 0) ? 0.0 : data[2 * index];
-        const double real = data[2 * index - 1];
+        double real = fftData[index];
+        double imaginary =
+            (index == 0 || index == numFreqs) ? 0.0 : fftData[fftSize - index];
+
+        if (isinf(real))
+            fprintf(stderr, "%d real infinity\n", index);
+        if (isinf(imaginary))
+            fprintf(stderr, "%d imag infinity\n", index);
         const double power = real * real + imaginary * imaginary;
+        if (isinf(power))
+            fprintf(stderr, "%d power infinity\n", index);
+
+#ifdef GRAPHICS
         double period = (index == 0) ? 10000 : 1 / freq + 0.5;
         plot->addData(period, power);
+#endif
         if (power > maxPower) maxPower = power;
     }
+
     fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f maxPeriod %.2f\n", numFreqs, maxPower, 1.0 / freqPerSample);
+#ifdef GRAPHICS
     peaksPlot->xAxis->setRange(0.0, periodSpinbox->value() * 2);
     peaksPlot->yAxis->setRange(0.0, maxPower);
-    delete[] data;
+#endif
+    delete[] fftData;
 }
 
 QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) const

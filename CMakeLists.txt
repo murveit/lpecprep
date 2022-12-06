@@ -47,7 +47,10 @@ endif (GSL_FOUND)
 
 set(LPecPrep_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source/qcustomplot.cpp
-   )
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/fftutil.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
+    )
 
 set(ALL_SRCS
     ${LPecPrep_SRCS}
@@ -71,9 +74,6 @@ set(LPecPrepMain_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/resources.qrc
-    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/fftutil.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
     )
 
 qt5_wrap_ui(LPecPrepui_SRCS
