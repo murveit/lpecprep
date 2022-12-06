@@ -4,7 +4,7 @@
 #include "ui_analysis.h"
 #include "fftutil.h"
 
-//////////#define GRAPHICS
+#define GRAPHICS
 
 namespace
 {
@@ -206,16 +206,6 @@ void Analysis::plotPeaks(const PECData &samples)
     fft.forward(fftData);
     fprintf(stderr, "FFT of size %d took %lldms\n", fftSize, timer.elapsed());
 
-#ifdef DEBUG
-    fprintf(stderr, "FFT Output:\n");
-    for (int i = 0; i < fftSize; ++i)
-    {
-        fprintf(stderr, "%d %.3f ", i, fftData[i]);
-        if (i % 10 == 9) fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-#endif
-
     /*
     fft.inverse(fftData);
     for (int i = 0; i < size; ++i)
@@ -229,6 +219,28 @@ void Analysis::plotPeaks(const PECData &samples)
     const double freqPerSample = maxFreq / numFreqs;
     fprintf(stderr, "numFreqs = %d fpS = %f\n", numFreqs, freqPerSample);/////////////
     double maxPower = 0.0;
+
+
+    ////#ifdef DEBUG
+    fprintf(stderr, "numFreqs %d timePerSample %f maxFreq %f freqPerSample %f\n",
+            numFreqs, timePerSample, maxFreq, freqPerSample);
+    fprintf(stderr, "FFT Output:\n");
+    for (int i = 0; i < fftSize; ++i)
+    {
+        fprintf(stderr, "%d %.3f ", i, fftData[i]);
+        if (i % 10 == 9) fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+    fprintf(stderr, "FFT Output again:\n");
+    for (int i = 0; i < fftSize; ++i)
+    {
+        double real = fftData[i];
+        double imaginary = (i == 0 || i == numFreqs) ? 0.0 : fftData[fftSize - i];
+        fprintf(stderr, "%d %.3f %.3f, ", i, real, imaginary);
+        if (i % 10 == 9) fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+    ////#endif
 
     QColor color = Qt::red;
 #ifdef GRAPHICS
