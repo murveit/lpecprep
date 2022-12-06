@@ -2,12 +2,13 @@
 #include "phdconvert.h"
 
 #include "ui_analysis.h"
+#include "fftutil.h"
 
 namespace
 {
 
-int initGraph(QCustomPlot *plot, QCPAxis *yAxis, QCPGraph::LineStyle lineStyle,
-              const QColor &color, const QString &name)
+int initPlot(QCustomPlot *plot, QCPAxis *yAxis, QCPGraph::LineStyle lineStyle,
+             const QColor &color, const QString &name)
 {
     int num = plot->graphCount();
     plot->addGraph(plot->xAxis, yAxis);
@@ -64,6 +65,10 @@ void Analysis::clearPlots()
     for (int i = 0; i < overlapPlot->graphCount(); ++i)
         overlapPlot->graph(i)->data()->clear();
     overlapPlot->clearItems();
+
+    for (int i = 0; i < peaksPlot->graphCount(); ++i)
+        peaksPlot->graph(i)->data()->clear();
+    peaksPlot->clearItems();
 }
 
 void Analysis::doPlots()
@@ -83,6 +88,8 @@ void Analysis::doPlots()
     }
     else
         data = rawData;
+
+    plotPeaks(data);
 
 #if 0
     PECData noiseData = getNoiseData();
@@ -119,7 +126,7 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
     for (const auto &p : periods)
     {
         auto color = colors[cIndex++ % colors.size()];
-        int plt = initGraph(overlapPlot, overlapPlot->yAxis, QCPGraph::lsLine, color, "");
+        int plt = initPlot(overlapPlot, overlapPlot->yAxis, QCPGraph::lsLine, color, "");
         auto plot = overlapPlot->graph(plt);
         for (const auto &v : p)
             plot->addData(v.time, v.signal);
@@ -130,6 +137,64 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
         overlapPlot->yAxis->setRange(minLrSample, maxLrSample);
     else
         overlapPlot->yAxis->setRange(minSample, maxSample);
+}
+
+void Analysis::plotPeaks(const PECData &samples)
+{
+    const int size = 32 * 1024;
+    //const int size = samples.size();
+
+    peaksPlot->clearGraphs();
+    if (samples.size() <= 2) return;
+
+    // This is too large to allocate on the stack.
+    double *data = new double[size];
+    double *dptr = data;
+
+    for (int i = 0; i < samples.size(); ++i)
+        *dptr++ = samples[i].signal;
+    for (int i = samples.size(); i < size; ++i)
+        *dptr = 0.0;
+
+    FFTUtil fft(size);
+    QElapsedTimer timer;
+    timer.start();
+    fft.forward(data);
+    fprintf(stderr, "FFT of size %d took %lldms\n", size, timer.elapsed());
+
+    /*
+    fft.inverse(data);
+    for (int i = 0; i < size; ++i)
+        fprintf(stderr, "%d: %.3f\n", i, data[i]);
+    return;
+    */
+
+    const int numFreqs = 1 + size / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
+    const double timePerSample = (samples.last().time - samples[0].time) / (samples.size() - 1);
+    const double maxFreq = 0.5 / timePerSample;
+    const double freqPerSample = maxFreq / numFreqs;
+    fprintf(stderr, "numFreqs = %d fpS = %f\n", numFreqs, freqPerSample);/////////////
+    double maxPower = 0.0;
+
+    QColor color = Qt::red;
+    int plt = initPlot(peaksPlot, peaksPlot->yAxis, QCPGraph::lsLine, color, "");
+    auto plot = peaksPlot->graph(plt);
+    fprintf(stderr, "Plot %d\n", plt);
+
+    for (int index = numFreqs - 1; index >= 0; index--)
+    {
+        const double freq = index * freqPerSample;
+        const double imaginary = (index == 0) ? 0.0 : data[2 * index];
+        const double real = data[2 * index - 1];
+        const double power = real * real + imaginary * imaginary;
+        double period = (index == 0) ? 10000 : 1 / freq + 0.5;
+        plot->addData(period, power);
+        if (power > maxPower) maxPower = power;
+    }
+    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f maxPeriod %.2f\n", numFreqs, maxPower, 1.0 / freqPerSample);
+    peaksPlot->xAxis->setRange(0.0, periodSpinbox->value() * 2);
+    peaksPlot->yAxis->setRange(0.0, maxPower);
+    delete[] data;
 }
 
 QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) const
@@ -189,15 +254,16 @@ void Analysis::finishPlots()
     pePlot->replot();
 
     overlapPlot->replot();
+    peaksPlot->replot();
 }
 
 void Analysis::initPlots()
 {
     // Note that these don't store the pen (skinny lines) and need to set the pen when drawing.
-    RAW_PLOT = initGraph(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::lightGray, "Raw");
-    TREND_PLOT = initGraph(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::blue, "Raw");
-    NOISE_PLOT = initGraph(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::green, "Raw");
-    SMOOTHED_PLOT = initGraph(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::red, "Raw");
+    RAW_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::lightGray, "Raw");
+    TREND_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::blue, "Raw");
+    NOISE_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::green, "Raw");
+    SMOOTHED_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::red, "Raw");
 
     connect(rawCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(trendCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);

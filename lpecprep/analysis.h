@@ -30,6 +30,7 @@ class Analysis : public QWidget, public Ui::Analysis
         void doPlots();
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
         void plotPeriods(const QVector<PECData> &data);
+        void plotPeaks(const PECData &data);
 
         double minTime = 0, maxTime = 0, minSample = 0, maxSample = 0, minLrSample = 0, maxLrSample = 0;
 

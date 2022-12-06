@@ -3,6 +3,7 @@
 #include <QApplication>
 
 #include "phdconvert.h"
+#include "fftutil.h"
 
 int main(int argc, char *argv[])
 {
