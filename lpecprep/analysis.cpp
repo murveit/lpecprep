@@ -4,8 +4,6 @@
 #include "ui_analysis.h"
 #include "fftutil.h"
 
-#define GRAPHICS
-
 namespace
 {
 
@@ -24,26 +22,19 @@ int initPlot(QCustomPlot *plot, QCPAxis *yAxis, QCPGraph::LineStyle lineStyle,
 
 Analysis::Analysis()
 {
-#ifdef GRAPHICS
     setupUi(this);
     initPlots();
     setDefaults();
-
-#endif
 
     startPlots(); //// where does this go?
 
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
-#ifdef GRAPHICS
     filenameLabel->setText(filename);
-#endif
 
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
-
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
-
     fprintf(stderr, "PHD2 returned %d samples\n", rawData.size());
 
     doPlots();
@@ -80,33 +71,23 @@ void Analysis::clearPlots()
 
 void Analysis::doPlots()
 {
-#ifdef GRAPHICS
     clearPlots();
 
     if (rawCB->isChecked())
         plotData(rawData, RAW_PLOT);
-#endif
 
     PECData data;
-#ifdef GRAPHICS
     if (linearRegressionCB->isChecked())
-#else
-    if (true)
-#endif
     {
-        data = linearRegress(rawData);
-#ifdef GRAPHICS
+        data = regressor.run(rawData);
         if (trendCB->isChecked())
             plotData(data, TREND_PLOT);
-#endif
     }
     else
         data = rawData;
 
-    fprintf(stderr, "First plot peaks\n");
-    plotPeaks(data);
-    //fprintf(stderr, "2nd plot peaks\n");
-    //plotPeaks(data);
+    constexpr int fftSize = 32 * 1024;
+    plotPeaks(data, fftSize);
 
 #if 0
     PECData noiseData = getNoiseData();
@@ -118,7 +99,6 @@ void Analysis::doPlots()
         plotData(smoothedData, TREND_PLOT);
 #endif
 
-#ifdef GRAPHICS
     int pecPeriod = periodSpinbox->value();
     constexpr int maxPeriodPlots = 50;
     if (pecPeriod > 1 && data.size() / pecPeriod <= maxPeriodPlots)
@@ -127,7 +107,6 @@ void Analysis::doPlots()
         plotPeriods(periodData);
     }
     finishPlots();
-#endif
 }
 
 void Analysis::plotPeriods(const QVector<PECData> &periods)
@@ -152,44 +131,19 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
 
     overlapPlot->xAxis->setRange(0, periods[0].size());
     if (linearRegressionCB->isChecked())
-        overlapPlot->yAxis->setRange(minLrSample, maxLrSample);
+        overlapPlot->yAxis->setRange(regressor.minValue(), regressor.maxValue());
     else
         overlapPlot->yAxis->setRange(minSample, maxSample);
 }
 
-void Analysis::plotPeaks(const PECData &samples)
+void Analysis::plotPeaks(const PECData &samples, int fftSize)
 {
     fprintf(stderr, "plotPeaks with %d samples\n", samples.size());
 
-    constexpr int fftSize = 2 * 1024;
     const int sampleSize = samples.size();
 
-#ifdef GRAPHICS
     peaksPlot->clearGraphs();
-#endif
     if (sampleSize <= 2) return;
-
-    /*
-    fprintf(stderr, " test1\n");
-    FFTUtil::test();
-    fprintf(stderr, " test2\n");
-    FFTUtil::test();
-    fprintf(stderr, " test3\n");
-    FFTUtil::test();
-    fprintf(stderr, " test4\n");
-    FFTUtil::test();
-    return;
-    */
-
-#ifdef DEBUG
-    fprintf(stderr, "FFT Input:\n");
-    for (int i = 0; i < sampleSize; ++i)
-    {
-        fprintf(stderr, "%d %.3f ", i, samples[i].signal);
-        if (i % 10 == 9) fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-#endif
 
     // This is too large to allocate on the stack.
     double *fftData = new double[fftSize];
@@ -198,7 +152,7 @@ void Analysis::plotPeaks(const PECData &samples)
     for (int i = 0; i < sampleSize; ++i)
         *dptr++ = samples[i].signal;
     for (int i = sampleSize; i < fftSize; ++i)
-        *dptr = 0.0;
+        *dptr++ = 0.0;
 
     FFTUtil fft(fftSize);
     QElapsedTimer timer;
@@ -218,36 +172,12 @@ void Analysis::plotPeaks(const PECData &samples)
     const double maxFreq = 0.5 / timePerSample;
     const double freqPerSample = maxFreq / numFreqs;
     fprintf(stderr, "numFreqs = %d fpS = %f\n", numFreqs, freqPerSample);/////////////
+
     double maxPower = 0.0;
-
-
-    ////#ifdef DEBUG
-    fprintf(stderr, "numFreqs %d timePerSample %f maxFreq %f freqPerSample %f\n",
-            numFreqs, timePerSample, maxFreq, freqPerSample);
-    fprintf(stderr, "FFT Output:\n");
-    for (int i = 0; i < fftSize; ++i)
-    {
-        fprintf(stderr, "%d %.3f ", i, fftData[i]);
-        if (i % 10 == 9) fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-    fprintf(stderr, "FFT Output again:\n");
-    for (int i = 0; i < fftSize; ++i)
-    {
-        double real = fftData[i];
-        double imaginary = (i == 0 || i == numFreqs) ? 0.0 : fftData[fftSize - i];
-        fprintf(stderr, "%d %.3f %.3f, ", i, real, imaginary);
-        if (i % 10 == 9) fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-    ////#endif
-
+    int mpIndex = -1;
     QColor color = Qt::red;
-#ifdef GRAPHICS
     int plt = initPlot(peaksPlot, peaksPlot->yAxis, QCPGraph::lsLine, color, "");
     auto plot = peaksPlot->graph(plt);
-    fprintf(stderr, "Plot %d\n", plt);
-#endif
 
     for (int index = numFreqs; index >= 0; index--)
     {
@@ -264,18 +194,21 @@ void Analysis::plotPeaks(const PECData &samples)
         if (isinf(power))
             fprintf(stderr, "%d power infinity\n", index);
 
-#ifdef GRAPHICS
         double period = (index == 0) ? 10000 : 1 / freq + 0.5;
         plot->addData(period, power);
-#endif
-        if (power > maxPower) maxPower = power;
+        if (power > maxPower)
+        {
+            mpIndex = index;
+            maxPower = power;
+        }
     }
 
-    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f maxPeriod %.2f\n", numFreqs, maxPower, 1.0 / freqPerSample);
-#ifdef GRAPHICS
+    const double maxPowerFreq = mpIndex * freqPerSample;
+    const double maxPowerPeriod = maxPowerFreq == 0 ? 0 : 1 / maxPowerFreq;
+    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f at %.1fs maxPeriod %.2f\n",
+            numFreqs, maxPower, maxPowerPeriod, 1.0 / freqPerSample);
     peaksPlot->xAxis->setRange(0.0, periodSpinbox->value() * 2);
     peaksPlot->yAxis->setRange(0.0, maxPower);
-#endif
     delete[] fftData;
 }
 
@@ -355,39 +288,3 @@ void Analysis::initPlots()
     connect(periodSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
 }
 
-PECData Analysis::linearRegress(const PECData &data)
-{
-    double xySum = 0, xxSum = 0, xSum = 0, ySum = 0;
-    const double size = data.size();
-    if (size == 0) return PECData(); // something else?
-
-    for (const PECSample d : data)
-    {
-        xySum += d.time * d.signal;
-        xSum += d.time;
-        ySum += d.signal;
-        xxSum += d.time * d.time;
-    }
-    const double denom = ((size * xxSum) - (xSum * xSum));
-
-    if (denom == 0) return PECData(); // something else?
-    const double slope = ((data.size() * xySum) - (xSum * ySum)) / denom;
-    const double intercept = (ySum - (slope * xSum)) / size;
-
-    //fprintf(stderr, "************ slope %f intercept %f\n", slope, intercept);
-    // For now, these slope, intercept are not saved as globals.
-
-    double deltaPos = 0, deltaNeg = 0;
-
-    PECData regressed;
-    for (int i = 0; i < size; ++i)
-    {
-        const PECSample &s = data[i];
-        double newSignal = s.signal - (slope * s.time) - intercept;
-        if (newSignal > maxLrSample) maxLrSample = newSignal;
-        if (newSignal < minLrSample) minLrSample = newSignal;
-        regressed.push_back(PECSample(s.time, newSignal));
-        // I dropped the computation of deltaPos and DeltaNeg here
-    }
-    return regressed;
-}

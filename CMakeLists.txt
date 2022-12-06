@@ -48,6 +48,7 @@ endif (GSL_FOUND)
 set(LPecPrep_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/qcustomplot-source/qcustomplot.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/fftutil.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/linear_regress.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
    )
 

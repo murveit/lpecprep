@@ -1,55 +1,18 @@
 #include <stdio.h>
 
-#include "phdconvert.h"
-#include "fftutil.h"
 #include <QElapsedTimer>
 
-PECData linearRegress(const PECData &data)
-{
-    double xySum = 0, xxSum = 0, xSum = 0, ySum = 0;
-    const double size = data.size();
-    if (size == 0) return PECData(); // something else?
+#include "phdconvert.h"
+#include "fftutil.h"
+#include "linear_regress.h"
 
-    for (const PECSample d : data)
-    {
-        xySum += d.time * d.signal;
-        xSum += d.time;
-        ySum += d.signal;
-        xxSum += d.time * d.time;
-    }
-    const double denom = ((size * xxSum) - (xSum * xSum));
-
-    if (denom == 0) return PECData(); // something else?
-    const double slope = ((data.size() * xySum) - (xSum * ySum)) / denom;
-    const double intercept = (ySum - (slope * xSum)) / size;
-
-    //fprintf(stderr, "************ slope %f intercept %f\n", slope, intercept);
-    // For now, these slope, intercept are not saved as globals.
-
-    double deltaPos = 0, deltaNeg = 0;
-
-    PECData regressed;
-    for (int i = 0; i < size; ++i)
-    {
-        const PECSample &s = data[i];
-        double newSignal = s.signal - (slope * s.time) - intercept;
-        ////if (newSignal > maxLrSample) maxLrSample = newSignal;
-        ////if (newSignal < minLrSample) minLrSample = newSignal;
-        regressed.push_back(PECSample(s.time, newSignal));
-        // I dropped the computation of deltaPos and DeltaNeg here
-    }
-    return regressed;
-}
-
-void plotPeaks(const PECData &samples)
+void plotPeaks(const PECData &samples, int fftSize)
 {
     fprintf(stderr, "plotPeaks with %d samples\n", samples.size());
 
-    constexpr int fftSize = 32 * 1024;
     const int sampleSize = samples.size();
 
     if (sampleSize <= 2) return;
-
 
 #ifdef DEBUG
     fprintf(stderr, "FFT Input:\n");
@@ -68,7 +31,7 @@ void plotPeaks(const PECData &samples)
     for (int i = 0; i < sampleSize; ++i)
         *dptr++ = samples[i].signal;
     for (int i = sampleSize; i < fftSize; ++i)
-        *dptr = 0.0;
+        *dptr++ = 0.0;
 
     FFTUtil fft(fftSize);
     QElapsedTimer timer;
@@ -134,8 +97,11 @@ void plotPeaks(const PECData &samples)
         }
     }
 
-    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f index %d maxPeriod %.2f\n", numFreqs, maxPower, mpIndex,
-            1.0 / freqPerSample);
+    const double maxPowerFreq = mpIndex * freqPerSample;
+    const double maxPowerPeriod = maxPowerFreq == 0 ? 0 : 1 / maxPowerFreq;
+    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f at %.1fs maxPeriod %.2f\n",
+            numFreqs, maxPower, maxPowerPeriod, 1.0 / freqPerSample);
+
     delete[] fftData;
 }
 
@@ -147,14 +113,16 @@ int main(int argc, char *argv[])
     PhdConvert phd2(filename, p);
     PECData rawData = phd2.getData();
 
-    PECData data;
-    data = linearRegress(rawData);
-    plotPeaks(data);
-    plotPeaks(data);
-    plotPeaks(data);
-    plotPeaks(data);
-    plotPeaks(data);
-    plotPeaks(data);
+    LinearRegress regressor;
+    const PECData data = regressor.run(rawData);
+
+    constexpr int fftSize = 32 * 1024;
+    plotPeaks(data, fftSize);
+    plotPeaks(data, fftSize);
+    plotPeaks(data, fftSize);
+    plotPeaks(data, fftSize);
+    plotPeaks(data, fftSize);
+    plotPeaks(data, fftSize);
 
     return 0;
 }
