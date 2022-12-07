@@ -32,6 +32,8 @@ class Analysis : public QWidget, public Ui::Analysis
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
         void plotPeriods(const QVector<PECData> &data);
         void plotPeaks(const PECData &data, int fftSize);
+        PECData noiseData(const PECData &signal, const PECData &correction);
+
         void setupKeyboardShortcuts();
         void peaksMousePress(QMouseEvent *event);
 

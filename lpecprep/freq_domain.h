@@ -49,10 +49,13 @@ class FreqDomain
             return m_maxMagnitude;
         }
 
+        // Currently, generate PECData of given length using just the single peak frequency.
+        PECData generate(int length) const;
 
     private:
         void setupBuffer(int size);
 
+        double m_startTime = 0;
         int m_numFreqs = 0;
         double m_timePerSample = 0;
         double m_maxFreq = 0;

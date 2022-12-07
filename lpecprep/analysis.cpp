@@ -90,15 +90,13 @@ void Analysis::doPlots()
     constexpr int fftSize = 64 * 1024;
     plotPeaks(data, fftSize);
 
-#if 0
-    PECData noiseData = getNoiseData();
-    if (noiseCB->isChecked())
-        plotData(noiseData, NOISE_PLOT);
-
-    PECData smoothedData = getSmoothedData();
+    PECData smoothedData = freqDomain.generate(data.size());
     if (smoothedCB->isChecked())
-        plotData(smoothedData, TREND_PLOT);
-#endif
+        plotData(smoothedData, SMOOTHED_PLOT);
+
+    PECData noise = noiseData(data, smoothedData);
+    if (noiseCB->isChecked())
+        plotData(noise, NOISE_PLOT);
 
     int pecPeriod = periodSpinbox->value();
     constexpr int maxPeriodPlots = 50;
@@ -108,6 +106,28 @@ void Analysis::doPlots()
         plotPeriods(periodData);
     }
     finishPlots();
+}
+
+// This simply subtracts the input data.
+PECData Analysis::noiseData(const PECData &signal, const PECData &correction)
+{
+    if (signal.size() != correction.size())
+    {
+        fprintf(stderr, "Bad inputs to getNoiseData!");
+        return PECData();
+    }
+    PECData output;
+    for (int i = 0; i < signal.size(); ++i)
+    {
+        if (fabs(signal[i].time - correction[i].time) > 1.0)
+        {
+            fprintf(stderr, "Time diff too large in getNoiseData! sample %d values %.3f %.3f\n",
+                    i, signal[i].time, correction[i].time);
+            return PECData();
+        }
+        output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal));
+    }
+    return output;
 }
 
 void Analysis::plotPeriods(const QVector<PECData> &periods)
@@ -237,9 +257,9 @@ void Analysis::initPlots()
 {
     // Note that these don't store the pen (skinny lines) and need to set the pen when drawing.
     RAW_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::lightGray, "Raw");
-    TREND_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::blue, "Raw");
-    NOISE_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::green, "Raw");
-    SMOOTHED_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::red, "Raw");
+    TREND_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::blue, "Trend");
+    NOISE_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::green, "Noise");
+    SMOOTHED_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::red, "Smooth");
 
     connect(rawCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(trendCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
