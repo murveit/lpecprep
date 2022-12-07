@@ -1,6 +1,8 @@
 #include "analysis.h"
 #include "phdconvert.h"
 
+#include <QKeySequence>
+
 #include "ui_analysis.h"
 #include "fftutil.h"
 
@@ -17,6 +19,13 @@ int initPlot(QCustomPlot *plot, QCPAxis *yAxis, QCPGraph::LineStyle lineStyle,
     plot->graph(num)->setName(name);
     return num;
 }
+
+void clearPlot(QCustomPlot *plot)
+{
+    for (int i = 0; i < plot->graphCount(); ++i)
+        plot->graph(i)->data()->clear();
+    plot->clearItems();
+}
 }
 
 
@@ -25,6 +34,7 @@ Analysis::Analysis()
     setupUi(this);
     initPlots();
     setDefaults();
+    setupKeyboardShortcuts();
 
     startPlots(); //// where does this go?
 
@@ -56,17 +66,9 @@ void Analysis::setDefaults()
 
 void Analysis::clearPlots()
 {
-    for (int i = 0; i < pePlot->graphCount(); ++i)
-        pePlot->graph(i)->data()->clear();
-    pePlot->clearItems();
-
-    for (int i = 0; i < overlapPlot->graphCount(); ++i)
-        overlapPlot->graph(i)->data()->clear();
-    overlapPlot->clearItems();
-
-    for (int i = 0; i < peaksPlot->graphCount(); ++i)
-        peaksPlot->graph(i)->data()->clear();
-    peaksPlot->clearItems();
+    clearPlot(pePlot);
+    clearPlot(overlapPlot);
+    clearPlot(peaksPlot);
 }
 
 void Analysis::doPlots()
@@ -86,7 +88,7 @@ void Analysis::doPlots()
     else
         data = rawData;
 
-    constexpr int fftSize = 32 * 1024;
+    constexpr int fftSize = 64 * 1024;
     plotPeaks(data, fftSize);
 
 #if 0
@@ -171,12 +173,12 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
     const double timePerSample = (samples.last().time - samples[0].time) / (sampleSize - 1);
     const double maxFreq = 0.5 / timePerSample;
     const double freqPerSample = maxFreq / numFreqs;
-    fprintf(stderr, "numFreqs = %d fpS = %f\n", numFreqs, freqPerSample);/////////////
 
-    double maxPower = 0.0;
+    double maxMagnitude = 0.0;
     int mpIndex = -1;
     QColor color = Qt::red;
-    int plt = initPlot(peaksPlot, peaksPlot->yAxis, QCPGraph::lsLine, color, "");
+    int plt = initPlot(peaksPlot, peaksPlot->yAxis, peaksLineType, color, "");
+
     auto plot = peaksPlot->graph(plt);
 
     for (int index = numFreqs; index >= 0; index--)
@@ -186,29 +188,36 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
         double imaginary =
             (index == 0 || index == numFreqs) ? 0.0 : fftData[fftSize - index];
 
-        if (isinf(real))
-            fprintf(stderr, "%d real infinity\n", index);
-        if (isinf(imaginary))
-            fprintf(stderr, "%d imag infinity\n", index);
-        const double power = real * real + imaginary * imaginary;
-        if (isinf(power))
-            fprintf(stderr, "%d power infinity\n", index);
+        const double magnitude = sqrt(real * real + imaginary * imaginary);
+        //const double phase = atan2(imaginary, real);
 
         double period = (index == 0) ? 10000 : 1 / freq + 0.5;
-        plot->addData(period, power);
-        if (power > maxPower)
+        plot->addData(period, magnitude);
+        if (magnitude > maxMagnitude)
         {
             mpIndex = index;
-            maxPower = power;
+            maxMagnitude = magnitude;
         }
     }
 
-    const double maxPowerFreq = mpIndex * freqPerSample;
-    const double maxPowerPeriod = maxPowerFreq == 0 ? 0 : 1 / maxPowerFreq;
-    fprintf(stderr, "Freq plot: numFreqs %d maxPower %.2f at %.1fs maxPeriod %.2f\n",
-            numFreqs, maxPower, maxPowerPeriod, 1.0 / freqPerSample);
+    const double maxMagnitudeFreq = mpIndex * freqPerSample;
+    const double maxMagnitudePeriod = maxMagnitudeFreq == 0 ? 0 : 1 / maxMagnitudeFreq;
+    fprintf(stderr, "Freq plot: numFreqs %d maxMagnitude %.2f at %.1fs maxPeriod %.2f\n",
+            numFreqs, maxMagnitude, maxMagnitudePeriod, 1.0 / freqPerSample);
     peaksPlot->xAxis->setRange(0.0, periodSpinbox->value() * 2);
-    peaksPlot->yAxis->setRange(0.0, maxPower);
+    peaksPlot->yAxis->setRange(0.0, maxMagnitude);
+
+    // Add markers on the peaks plot for the worm period and its harmonics.
+    if (periodSpinbox->value() > 3)
+    {
+        for (int i = 1; i < 10; ++i)
+        {
+            QCPItemStraightLine *infLine = new QCPItemStraightLine(peaksPlot);
+            infLine->point1->setCoords(periodSpinbox->value() / float(i), 0); // location of point 1 in plot coordinate
+            infLine->point2->setCoords(periodSpinbox->value() / float(i), 1e6); // location of point 2 in plot coordinate
+        }
+    }
+
     delete[] fftData;
 }
 
@@ -286,5 +295,25 @@ void Analysis::initPlots()
     connect(smoothedCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(linearRegressionCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(periodSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
+
+    connect(peaksPlot, &QCustomPlot::mousePress, this, &Analysis::peaksMousePress);
+
+}
+
+void Analysis::peaksMousePress(QMouseEvent *event)
+{
+    fprintf(stderr, "Mouse Press at %d %d\n", event->x(), event->y());
+    if (peaksLineType == QCPGraph::lsLine)
+        peaksLineType = QCPGraph::lsImpulse;
+    else
+        peaksLineType = QCPGraph::lsLine;
+    doPlots();
+}
+
+void Analysis::setupKeyboardShortcuts(/*QCustomPlot *plot*/)
+{
+    // Shortcuts defined: https://doc.qt.io/archives/qt-4.8/qkeysequence.html#standard-shortcuts
+    QShortcut *s = new QShortcut(QKeySequence(QKeySequence::Quit), this);
+    connect(s, &QShortcut::activated, this, &QApplication::quit);
 }
 

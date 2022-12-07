@@ -41,14 +41,12 @@ void FFTUtil::inverse(double *data)
 
 FFTUtil::FFTUtil(int n) : size(n)
 {
-    fprintf(stderr, "FFTUtils Constructor\n");
     ///allocTables();
 }
 
 FFTUtil::~FFTUtil()
 {
     ////freeTables();
-    fprintf(stderr, "FFTUtils DESTRUCTOR!\n");
 }
 
 void FFTUtil::freeTables()
