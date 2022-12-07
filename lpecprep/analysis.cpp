@@ -4,7 +4,6 @@
 #include <QKeySequence>
 
 #include "ui_analysis.h"
-#include "fftutil.h"
 
 namespace
 {
@@ -147,65 +146,20 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
     peaksPlot->clearGraphs();
     if (sampleSize <= 2) return;
 
-    // This is too large to allocate on the stack.
-    double *fftData = new double[fftSize];
-    double *dptr = fftData;
+    freqDomain.load(samples, fftSize);
 
-    for (int i = 0; i < sampleSize; ++i)
-        *dptr++ = samples[i].signal;
-    for (int i = sampleSize; i < fftSize; ++i)
-        *dptr++ = 0.0;
-
-    FFTUtil fft(fftSize);
-    QElapsedTimer timer;
-    timer.start();
-    fft.forward(fftData);
-    fprintf(stderr, "FFT of size %d took %lldms\n", fftSize, timer.elapsed());
-
-    /*
-    fft.inverse(fftData);
-    for (int i = 0; i < size; ++i)
-        fprintf(stderr, "%d: %.3f\n", i, fftData[i]);
-    return;
-    */
-
-    const int numFreqs = 1 + fftSize / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
-    const double timePerSample = (samples.last().time - samples[0].time) / (sampleSize - 1);
-    const double maxFreq = 0.5 / timePerSample;
-    const double freqPerSample = maxFreq / numFreqs;
-
-    double maxMagnitude = 0.0;
-    int mpIndex = -1;
     QColor color = Qt::red;
     int plt = initPlot(peaksPlot, peaksPlot->yAxis, peaksLineType, color, "");
 
     auto plot = peaksPlot->graph(plt);
 
-    for (int index = numFreqs; index >= 0; index--)
+    for (int index = freqDomain.numFreqs(); index >= 0; index--)
     {
-        const double freq = index * freqPerSample;
-        double real = fftData[index];
-        double imaginary =
-            (index == 0 || index == numFreqs) ? 0.0 : fftData[fftSize - index];
-
-        const double magnitude = sqrt(real * real + imaginary * imaginary);
-        //const double phase = atan2(imaginary, real);
-
-        double period = (index == 0) ? 10000 : 1 / freq + 0.5;
-        plot->addData(period, magnitude);
-        if (magnitude > maxMagnitude)
-        {
-            mpIndex = index;
-            maxMagnitude = magnitude;
-        }
+        plot->addData(freqDomain.period(index), freqDomain.magnitude(index));
     }
 
-    const double maxMagnitudeFreq = mpIndex * freqPerSample;
-    const double maxMagnitudePeriod = maxMagnitudeFreq == 0 ? 0 : 1 / maxMagnitudeFreq;
-    fprintf(stderr, "Freq plot: numFreqs %d maxMagnitude %.2f at %.1fs maxPeriod %.2f\n",
-            numFreqs, maxMagnitude, maxMagnitudePeriod, 1.0 / freqPerSample);
     peaksPlot->xAxis->setRange(0.0, periodSpinbox->value() * 2);
-    peaksPlot->yAxis->setRange(0.0, maxMagnitude);
+    peaksPlot->yAxis->setRange(0.0, freqDomain.maxMagnitude());
 
     // Add markers on the peaks plot for the worm period and its harmonics.
     if (periodSpinbox->value() > 3)
@@ -217,8 +171,6 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
             infLine->point2->setCoords(periodSpinbox->value() / float(i), 1e6); // location of point 2 in plot coordinate
         }
     }
-
-    delete[] fftData;
 }
 
 QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) const

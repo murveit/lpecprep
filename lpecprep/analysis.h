@@ -4,6 +4,7 @@
 #include "ui_analysis.h"
 #include "structs.h"
 #include "linear_regress.h"
+#include "freq_domain.h"
 
 class Analysis : public QWidget, public Ui::Analysis
 {
@@ -38,6 +39,7 @@ class Analysis : public QWidget, public Ui::Analysis
 
         PECData rawData;
         LinearRegress regressor;
+        FreqDomain freqDomain;
 
         // Overlayed plot indeces on pePlot.
         int RAW_PLOT = 0;
