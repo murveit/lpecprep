@@ -61,11 +61,20 @@ class FreqDomain
         double m_maxFreq = 0;
         double m_freqPerSample = 0;
 
+        // The max-value of the magnitudes of the spectrum, and the index in the spectrum of that max.
         double m_maxMagnitude = 0;
         int m_maxMagnitudeIndex = 0;
 
+        // Sum of the absolute value of the input data. Used for scaling the generated waveform.
+        double m_absSum = 0;
+
+        // Double buffer used as input and output to the fft.
         double *fftData = nullptr;
+        // Number of points in the fft--typically wider than the input data.
         int fftSize = 0;
+
+        // Number of samples in the input data.
+        int m_sampleSize = 0;
 };
 
 #endif // FREQDOMAIN

@@ -42,11 +42,18 @@ void FreqDomain::load(const PECData &samples, int size)
         m_startTime = samples[0].time;
 
     // Load the waveform into the fft buffer.
-    const int sampleSize = samples.size();
+    m_sampleSize = samples.size();
     double *dptr = fftData;
-    for (int i = 0; i < sampleSize; ++i)
-        *dptr++ = samples[i].signal;
-    for (int i = sampleSize; i < fftSize; ++i)
+    m_absSum = 0;
+    for (int i = 0; i < m_sampleSize; ++i)
+    {
+        double signal = samples[i].signal;
+        // Sum the abs(signal). Used later to scale the generated waveforms.
+        m_absSum += fabs(signal);
+        *dptr++ = signal;
+    }
+    // 0-pad the rest.
+    for (int i = m_sampleSize; i < fftSize; ++i)
         *dptr++ = 0.0;
 
     FFTUtil fft(fftSize);
@@ -56,7 +63,7 @@ void FreqDomain::load(const PECData &samples, int size)
     fprintf(stderr, "FFT of size %d took %lldms\n", fftSize, timer.elapsed());
 
     m_numFreqs = 1 + fftSize / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
-    m_timePerSample = (samples.last().time - samples[0].time) / (sampleSize - 1);
+    m_timePerSample = (samples.last().time - samples[0].time) / (m_sampleSize - 1);
     m_maxFreq = 0.5 / m_timePerSample;
     m_freqPerSample = m_maxFreq / m_numFreqs;
 
@@ -101,8 +108,14 @@ PECData FreqDomain::generate(int length) const
     FFTUtil fft(fftSize);
     fft.inverse(newData);
 
-    // This needs to be computed somehow!!!!!!!!!!!!!!!!!!!
-    const double scale = 100;
+    // Calculate the scale by simply equalizing the absolute value of the sum of samples.
+    double absSum = 0.0;
+    for (int i = 0; i < m_sampleSize; ++i)
+    {
+        double signal = newData[i];
+        absSum += fabs(signal);
+    }
+    const double scale = absSum > 0 ? m_absSum / absSum : 0;
 
     // Copy the filtered data into a PECData
     PECData output;
