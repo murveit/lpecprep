@@ -51,6 +51,7 @@ set(LPecPrep_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/linear_regress.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/freq_domain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/stats.cpp
    )
 
 set(ALL_SRCS
