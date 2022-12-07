@@ -50,7 +50,8 @@ class FreqDomain
         }
 
         // Currently, generate PECData of given length using just the single peak frequency.
-        PECData generate(int length) const;
+        // The generated signal repeats each worm period.
+        PECData generate(int length, int wormPeriod) const;
 
     private:
         void setupBuffer(int size);

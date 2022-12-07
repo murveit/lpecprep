@@ -84,7 +84,7 @@ void FreqDomain::load(const PECData &samples, int size)
             m_numFreqs, m_maxMagnitude, maxMagnitudePeriod, 1.0 / m_freqPerSample);
 }
 
-PECData FreqDomain::generate(int length) const
+PECData FreqDomain::generate(int length, int wormPeriod) const
 {
     const int maxIndex = m_maxMagnitudeIndex;
     if (maxIndex <= 0 || maxIndex >= fftSize)
@@ -123,6 +123,7 @@ PECData FreqDomain::generate(int length) const
     double minNew = 1e6, maxNew = -1;
     for (int i = 0; i < length; ++i)
     {
+        if (index >= wormPeriod) index = 0;
         if (index++ >= fftSize) index = 0;
         const double newSignal = newData[index] * scale;
         const double time = m_startTime + i * m_timePerSample;

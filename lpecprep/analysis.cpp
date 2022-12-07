@@ -90,7 +90,7 @@ void Analysis::doPlots()
     constexpr int fftSize = 64 * 1024;
     plotPeaks(data, fftSize);
 
-    PECData smoothedData = freqDomain.generate(data.size());
+    PECData smoothedData = freqDomain.generate(data.size(), periodSpinbox->value());
     if (smoothedCB->isChecked())
         plotData(smoothedData, SMOOTHED_PLOT);
 
