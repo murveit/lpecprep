@@ -26,20 +26,18 @@ class Analysis : public QWidget, public Ui::Analysis
         void initPlots();
         void setDefaults();
         void clearPlots();
-        void startPlots();
         void finishPlots();
         void doPlots();
+
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
-        void plotPeriods(const QVector<PECData> &data);
+        void plotPeriods(const QVector<PECData> &data, double minY, double maxY);
         void plotPeaks(const PECData &data, int fftSize);
-        PECData noiseData(const PECData &signal, const PECData &correction);
+        PECData getNoiseData(const PECData &signal, const PECData &correction);
 
         void setupKeyboardShortcuts();
         void peaksMousePress(QMouseEvent *event);
 
-        double minTime = 0, maxTime = 0, minSample = 0, maxSample = 0, minLrSample = 0, maxLrSample = 0;
-
-        PECData rawData;
+        PECData rawData, regData, smoothedData, noiseData;
         LinearRegress regressor;
         FreqDomain freqDomain;
 

@@ -7,6 +7,11 @@
 class FreqDomain
 {
     public:
+        struct Harmonics
+        {
+            double period, magnitude, phase;
+        };
+
         FreqDomain();
         ~FreqDomain();
 
@@ -42,7 +47,7 @@ class FreqDomain
         }
         double phase(int sample) const
         {
-            return atan2(imaginary(sample), real(sample));
+            return atan2(imaginary(sample), real(sample)) * 180.0 / M_PI;
         }
         double maxMagnitude() const
         {
@@ -51,7 +56,8 @@ class FreqDomain
 
         // Currently, generate PECData of given length using just the single peak frequency.
         // The generated signal repeats each worm period.
-        PECData generate(int length, int wormPeriod) const;
+        PECData generate(int length, int wormPeriod, int numHarmonics,
+                         QVector<Harmonics> *harmonics = nullptr) const;
 
     private:
         void setupBuffer(int size);

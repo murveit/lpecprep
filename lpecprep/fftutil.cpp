@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <math.h>
 
+// Depends on GSL fft functions:
+// https://www.gnu.org/software/gsl/doc/html/fft.html
+
 #include "fftutil.h"
-
-#define REAL(z,i) ((z)[2*(i)])
-#define IMAG(z,i) ((z)[2*(i)+1])
-
 #include <QElapsedTimer>
 
 // Move to QVector??

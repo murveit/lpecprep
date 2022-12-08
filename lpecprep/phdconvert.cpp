@@ -54,10 +54,8 @@ void PhdConvert::setColumnIndeces()
 
 void PhdConvert::processInputLine(const QString &line, RaDec channel)
 {
-    ////fprintf(stderr, "processing %s\n", line.toLatin1().data());
     if (line.contains("Guiding Begins"))
     {
-        ////fprintf(stderr, " Guiding Begins\n");
         // reset the data
         QDateTime startTime = getStartTime(line);
         if (startTime.isValid())
@@ -71,8 +69,6 @@ void PhdConvert::processInputLine(const QString &line, RaDec channel)
     }
     else if (line.startsWith("Frame,"))
     {
-        ////fprintf(stderr, " Column Indeces\n");
-
         // column headings
         colList = line.split(',');
         setColumnIndeces();
@@ -80,11 +76,8 @@ void PhdConvert::processInputLine(const QString &line, RaDec channel)
     else
     {
         if (dxIndex < 0 || params.sizeX == 0 || params.sizeY == 0 || params.dec == 0.0 || params.fl == 0.0)
-        {
-            fprintf(stderr, "  aborting dxIndex %d sizeX %f sizeY %f fl %f dec %f\n",
-                    dxIndex, params.sizeX, params.sizeY, params.fl, params.dec);
             return;
-        }
+
         QStringList cols = line.split(',');
         if (cols.size() > 0)
         {
@@ -147,6 +140,6 @@ void PhdConvert::resetData(const QDateTime &start)
     data.clear();
     if (!startTime.isValid())
         fprintf(stderr, "Time not valid!\n");
-    fprintf(stderr, "Resetting start: %s\n", startTime.toString().toLatin1().data());
+    // fprintf(stderr, "Resetting start: %s\n", startTime.toString().toLatin1().data());
     startTime = start;
 }

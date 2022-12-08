@@ -1,7 +1,7 @@
+#include <QKeySequence>
 #include "analysis.h"
 #include "phdconvert.h"
-
-#include <QKeySequence>
+#include "stats.h"
 
 #include "ui_analysis.h"
 
@@ -25,6 +25,79 @@ void clearPlot(QCustomPlot *plot)
         plot->graph(i)->data()->clear();
     plot->clearItems();
 }
+
+void addTableRow(QTableWidget *table, const QString &col1, const QString &col2 = "", const QString &col3 = "")
+{
+    const QColor color1 = Qt::black;
+    const QColor color2 = Qt::black;
+    int row = table->rowCount();
+    table->setRowCount(row + 1);
+
+    QTableWidgetItem *item1 = new QTableWidgetItem();
+    item1->setText(col1);
+    item1->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    item1->setForeground(color1);
+
+    QTableWidgetItem *item2 = new QTableWidgetItem();
+    item2->setText(col2);
+    item2->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    item2->setForeground(color2);
+
+    if (col2.size() == 0 && col3.size() == 0)
+    {
+        // Column 0 spans the other columns
+        table->setSpan(row, 0, 1, 3);
+        QFont font = table->font();
+        font.setBold(true);
+        item1->setFont(font);
+    }
+    else if (col3.size() > 0)
+    {
+        QTableWidgetItem *item3 = new QTableWidgetItem();
+        item3->setText(col3);
+        item3->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        item3->setForeground(color2);
+        table->setItem(row, 2, item3);
+    }
+    else
+    {
+        // Column 1 spans col 2
+        table->setSpan(row, 1, 1, 2);
+    }
+    table->setItem(row, 0, item1);
+    table->setItem(row, 1, item2);
+}
+
+// Helper to create tables in the Statistics display.
+// Start the table, displaying the heading and timing information, common to all sessions.
+void setupTable(QTableWidget *table)
+{
+    table->clear();
+    QFont font = table->font();
+    font.setPointSize(10);
+    table->setFont(font);
+    table->setRowCount(0);
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    table->setColumnCount(3);
+    table->verticalHeader()->setDefaultSectionSize(20);
+    table->horizontalHeader()->setStretchLastSection(false);
+    table->setColumnWidth(0, 50);
+    table->setColumnWidth(1, 30);
+    table->setColumnWidth(2, 30);
+    table->setShowGrid(false);
+    table->setWordWrap(true);
+    table->horizontalHeader()->hide();
+    table->verticalHeader()->hide();
+}
+
+void updateLimits(const Stats &stats, double *minX, double *maxX, double *minY, double *maxY)
+{
+    *maxY = std::max(*maxY, stats.maxValue());
+    *minY = std::min(*minY, stats.minValue());
+
+    *maxX = std::max(*maxX, stats.maxTime());
+    *minX = std::min(*minX, stats.minTime());
+}
 }
 
 
@@ -35,16 +108,16 @@ Analysis::Analysis()
     setDefaults();
     setupKeyboardShortcuts();
 
-    startPlots(); //// where does this go?
-
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
-    const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
+    const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
+    //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
     filenameLabel->setText(filename);
 
+    // FIX HARDCODED PARAMS
+    fprintf(stderr, "Using hardcoded file and params\n");
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
-    fprintf(stderr, "PHD2 returned %d samples\n", rawData.size());
 
     doPlots();
 }
@@ -61,6 +134,7 @@ void Analysis::setDefaults()
     linearRegressionCB->setChecked(true);
     noiseCB->setChecked(false);
     periodSpinbox->setValue(383);
+    harmonicsSpinbox->setValue(3);
 }
 
 void Analysis::clearPlots()
@@ -74,42 +148,109 @@ void Analysis::doPlots()
 {
     clearPlots();
 
-    if (rawCB->isChecked())
-        plotData(rawData, RAW_PLOT);
+    double minX = std::numeric_limits<double>::max(), maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max(), maxY = std::numeric_limits<double>::lowest();
 
-    PECData data;
+    Stats rawStats(rawData);
+
+    if (rawCB->isChecked())
+    {
+        updateLimits(rawStats, &minX, &maxX, &minY, &maxY);
+        plotData(rawData, RAW_PLOT);
+    }
+
+    PECData regData;
+    Stats regStats(rawData);
     if (linearRegressionCB->isChecked())
     {
-        data = regressor.run(rawData);
+        regData = regressor.run(rawData);
+        regStats = Stats(regData);
         if (trendCB->isChecked())
-            plotData(data, TREND_PLOT);
+        {
+            updateLimits(regStats, &minX, &maxX, &minY, &maxY);
+            plotData(regData, TREND_PLOT);
+        }
     }
     else
-        data = rawData;
+        regData = rawData;
 
     constexpr int fftSize = 64 * 1024;
-    plotPeaks(data, fftSize);
+    plotPeaks(regData, fftSize);
 
-    PECData smoothedData = freqDomain.generate(data.size(), periodSpinbox->value());
+    QVector<FreqDomain::Harmonics> harmonics;
+    PECData smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
+    setupTable(peaksTable);
+    addTableRow(peaksTable, "Harmonics used");
+    addTableRow(peaksTable, "Period", "Mag", "Phase");
+    for (const auto &h : harmonics)
+        addTableRow(peaksTable,
+                    QString("%1s").arg(h.period, 0, 'f', 1),
+                    QString("%1").arg(h.magnitude, 0, 'f', 1),
+                    QString("%1º").arg(h.phase, 0, 'f', 1));
+    Stats smoothStats(smoothedData);
     if (smoothedCB->isChecked())
+    {
+        updateLimits(smoothStats, &minX, &maxX, &minY, &maxY);
         plotData(smoothedData, SMOOTHED_PLOT);
+    }
 
-    PECData noise = noiseData(data, smoothedData);
+    noiseData = getNoiseData(regData, smoothedData);
+    Stats residualStats(noiseData);
     if (noiseCB->isChecked())
-        plotData(noise, NOISE_PLOT);
+    {
+        updateLimits(smoothStats, &minX, &maxX, &minY, &maxY);
+        plotData(noiseData, NOISE_PLOT);
+    }
 
     int pecPeriod = periodSpinbox->value();
     constexpr int maxPeriodPlots = 50;
-    if (pecPeriod > 1 && data.size() / pecPeriod <= maxPeriodPlots)
+    if (pecPeriod > 1 && regData.size() / pecPeriod <= maxPeriodPlots)
     {
-        QVector<PECData> periodData = separatePecPeriods(data, pecPeriod);
-        plotPeriods(periodData);
+        QVector<PECData> periodData = separatePecPeriods(regData, pecPeriod);
+        if (linearRegressionCB->isChecked())
+            plotPeriods(periodData, regStats.minValue(), regStats.maxValue());
+        else
+            plotPeriods(periodData, rawStats.minValue(), rawStats.maxValue());
     }
+
+    const double yRange = maxY - minY;
+    pePlot->xAxis->setRange(minX, maxX);
+    pePlot->yAxis->setRange(minY - yRange * .2, maxY + yRange * .2);
+
+    setupTable(statisticsTable);
+
+    addTableRow(statisticsTable, "Raw Data", "");
+    addTableRow(statisticsTable, "p-p PE",
+                QString("%1").arg(-rawStats.maxNegError(), 0, 'f', 2),
+                QString("%1").arg(rawStats.maxPosError(), 0, 'f', 2));
+    addTableRow(statisticsTable, "RMS", QString("%1").arg(rawStats.rmsError(), 0, 'f', 2));
+
+    if (linearRegressionCB->isChecked())
+    {
+        addTableRow(statisticsTable, "Regressed", "");
+        addTableRow(statisticsTable, "p-p PE",
+                    QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
+                    QString("%1").arg(regStats.maxPosError(), 0, 'f', 2));
+        addTableRow(statisticsTable, "RMS", QString("%1").arg(regStats.rmsError(), 0, 'f', 2));
+    }
+
+    addTableRow(statisticsTable, "Smoothed", "");
+    addTableRow(statisticsTable, "p-p PE",
+                QString("%1").arg(-smoothStats.maxNegError(), 0, 'f', 2),
+                QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2));
+    addTableRow(statisticsTable, "RMS", QString("%1").arg(smoothStats.rmsError(), 0, 'f', 2));
+
+    addTableRow(statisticsTable, "Residual", "");
+    addTableRow(statisticsTable, "p-p PE",
+                QString("%1").arg(-residualStats.maxNegError(), 0, 'f', 2),
+                QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2));
+    addTableRow(statisticsTable, "RMS", QString("%1").arg(residualStats.rmsError(), 0, 'f', 2));
+
     finishPlots();
 }
 
 // This simply subtracts the input data.
-PECData Analysis::noiseData(const PECData &signal, const PECData &correction)
+PECData Analysis::getNoiseData(const PECData &signal, const PECData &correction)
 {
     if (signal.size() != correction.size())
     {
@@ -130,7 +271,7 @@ PECData Analysis::noiseData(const PECData &signal, const PECData &correction)
     return output;
 }
 
-void Analysis::plotPeriods(const QVector<PECData> &periods)
+void Analysis::plotPeriods(const QVector<PECData> &periods, double minY, double maxY)
 {
     const QList<QColor> colors =
     {
@@ -151,16 +292,11 @@ void Analysis::plotPeriods(const QVector<PECData> &periods)
     }
 
     overlapPlot->xAxis->setRange(0, periods[0].size());
-    if (linearRegressionCB->isChecked())
-        overlapPlot->yAxis->setRange(regressor.minValue(), regressor.maxValue());
-    else
-        overlapPlot->yAxis->setRange(minSample, maxSample);
+    overlapPlot->yAxis->setRange(minY, maxY);
 }
 
 void Analysis::plotPeaks(const PECData &samples, int fftSize)
 {
-    fprintf(stderr, "plotPeaks with %d samples\n", samples.size());
-
     const int sampleSize = samples.size();
 
     peaksPlot->clearGraphs();
@@ -184,7 +320,7 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
     // Add markers on the peaks plot for the worm period and its harmonics.
     if (periodSpinbox->value() > 3)
     {
-        for (int i = 1; i < 10; ++i)
+        for (int i = 1; i <= harmonicsSpinbox->value(); ++i)
         {
             QCPItemStraightLine *infLine = new QCPItemStraightLine(peaksPlot);
             infLine->point1->setCoords(periodSpinbox->value() / float(i), 0); // location of point 1 in plot coordinate
@@ -221,34 +357,12 @@ void Analysis::plotData(const PECData &data, int plot)
 {
     auto rawPlot = pePlot->graph(plot);
     for (int i = 0; i < data.size(); i++)
-    {
-        double t = data[i].time;
-        if (t > maxTime) maxTime = t;
-        if (t < minTime) minTime = t;
-        double s = data[i].signal;
-        if (s > maxSample) maxSample = s;
-        if (s < minSample) minSample = s;
-        rawPlot->addData(t, s);
-    }
-}
-
-void Analysis::startPlots()
-{
-    minTime = 1e6;
-    maxTime = 0;
-    minSample = 1e6;
-    maxSample = 0;
-    minLrSample = 1e6;
-    maxLrSample = 0;
+        rawPlot->addData(data[i].time, data[i].signal);
 }
 
 void Analysis::finishPlots()
 {
-    const double yRange = maxSample - minSample;
-    pePlot->xAxis->setRange(minTime, maxTime);
-    pePlot->yAxis->setRange(minSample - yRange * .2, maxSample + yRange * .2);
     pePlot->replot();
-
     overlapPlot->replot();
     peaksPlot->replot();
 }
@@ -267,6 +381,7 @@ void Analysis::initPlots()
     connect(smoothedCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(linearRegressionCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(periodSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
+    connect(harmonicsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
 
     connect(peaksPlot, &QCustomPlot::mousePress, this, &Analysis::peaksMousePress);
 

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <math.h>
-#include <QElapsedTimer>
 
 #include "freq_domain.h"
 #include "fftutil.h"
@@ -57,10 +56,7 @@ void FreqDomain::load(const PECData &samples, int size)
         *dptr++ = 0.0;
 
     FFTUtil fft(fftSize);
-    QElapsedTimer timer;
-    timer.start();
     fft.forward(fftData);
-    fprintf(stderr, "FFT of size %d took %lldms\n", fftSize, timer.elapsed());
 
     m_numFreqs = 1 + fftSize / 2;  // n=5 --> frequencies: 0,1,2 and 6: 0,1,2,3
     m_timePerSample = (samples.last().time - samples[0].time) / (m_sampleSize - 1);
@@ -80,31 +76,35 @@ void FreqDomain::load(const PECData &samples, int size)
 
     const double maxMagnitudeFreq = m_maxMagnitudeIndex * m_freqPerSample;
     const double maxMagnitudePeriod = maxMagnitudeFreq == 0 ? 0 : 1 / maxMagnitudeFreq;
-    fprintf(stderr, "Freq plot: numFreqs %d maxMagnitude %.2f at %.1fs maxPeriod %.2f\n",
-            m_numFreqs, m_maxMagnitude, maxMagnitudePeriod, 1.0 / m_freqPerSample);
+    // fprintf(stderr, "Freq plot: maxMagnitude %.2f at %.1fs (%d) freq/sample %.5e\n",
+    //         m_maxMagnitude, maxMagnitudePeriod, m_maxMagnitudeIndex, m_freqPerSample);
 }
 
-PECData FreqDomain::generate(int length, int wormPeriod) const
+PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVector<Harmonics> *harmonics) const
 {
-    const int maxIndex = m_maxMagnitudeIndex;
-    if (maxIndex <= 0 || maxIndex >= fftSize)
+    const int wormPeriodIndex = 0.5 + 1.0 / (wormPeriod * m_freqPerSample); // 171 for 383s.
+    if (wormPeriodIndex <= 0 || wormPeriodIndex >= fftSize)
         return PECData();
 
     // Copy the real & imaginary values;
     double *newData = new double[fftSize];
     double *dptr = newData;
     for (int i = 0; i < fftSize; ++i)
-        //*dptr++ = fftData[i];
         *dptr++ = 0.0;
 
-    // Add in the max--should really go with worm period and harmonics
-    // and allow editing...
-
-    newData[maxIndex] = fftData[maxIndex];
-    newData[fftSize - maxIndex] = fftData[fftSize - maxIndex];
-    fprintf(stderr, "Generate() with index %d (%d) values %f %f\n", maxIndex, fftSize - maxIndex, newData[maxIndex],
-            newData[fftSize - maxIndex]);
-
+    // Enable frequencies with multiples of the max.
+    if (harmonics != nullptr) harmonics->clear();
+    for (int i = 1; i <= numHarmonics; ++i)
+    {
+        const int harmonicIndex = wormPeriodIndex * i;
+        const double period = 1.0 / (harmonicIndex * m_freqPerSample);
+        newData[harmonicIndex] = fftData[harmonicIndex];
+        newData[fftSize - harmonicIndex] = fftData[fftSize - harmonicIndex];
+        // fprintf(stderr, "Generate: add index %d: Period %.1f Mag %.2f Phase %.2fº\n",
+        //         harmonicIndex, period, magnitude(harmonicIndex), phase(harmonicIndex));
+        if (harmonics != nullptr)
+            harmonics->push_back({period, magnitude(harmonicIndex), phase(harmonicIndex)});
+    }
     FFTUtil fft(fftSize);
     fft.inverse(newData);
 
@@ -119,20 +119,18 @@ PECData FreqDomain::generate(int length, int wormPeriod) const
 
     // Copy the filtered data into a PECData
     PECData output;
-    int index = 0;
+    int sampleIndex = 0;
     double minNew = 1e6, maxNew = -1;
     for (int i = 0; i < length; ++i)
     {
-        if (index >= wormPeriod) index = 0;
-        if (index++ >= fftSize) index = 0;
-        const double newSignal = newData[index] * scale;
+        if (sampleIndex >= wormPeriod) sampleIndex = 0;
+        if (sampleIndex++ >= fftSize) sampleIndex = 0;
+        const double newSignal = newData[sampleIndex] * scale;
         const double time = m_startTime + i * m_timePerSample;
         output.push_back(PECSample(time, newSignal));
         if (newSignal > maxNew) maxNew = newSignal;
         if (newSignal < minNew) minNew = newSignal;
     }
-
-    fprintf(stderr, "Generated %d values. Max %f min %f\n", length, maxNew, minNew);
     delete[] newData;
     return output;
 }
