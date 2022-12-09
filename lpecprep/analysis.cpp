@@ -108,18 +108,35 @@ Analysis::Analysis()
     setDefaults();
     setupKeyboardShortcuts();
 
+    connect(newFileButton, &QPushButton::pressed, this, &Analysis::getFileFromUser);
+
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
-    const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
+    //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
+    QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-11-29T19-46-51-edited.txt");
+    readFile(filename);
+}
+
+void Analysis::readFile(const QString &filename)
+{
     filenameLabel->setText(filename);
 
     // FIX HARDCODED PARAMS
     fprintf(stderr, "Using hardcoded file and params\n");
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
+
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
 
     doPlots();
+}
+
+void Analysis::getFileFromUser()
+{
+    QUrl inputURL = QFileDialog::getOpenFileUrl(this, "Select input file",
+                    QUrl("file:///home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA3"));
+    if (!inputURL.isEmpty())
+        readFile(inputURL.toString(QUrl::PreferLocalFile));
 }
 
 Analysis::~Analysis()
@@ -134,7 +151,7 @@ void Analysis::setDefaults()
     linearRegressionCB->setChecked(true);
     noiseCB->setChecked(false);
     periodSpinbox->setValue(383);
-    harmonicsSpinbox->setValue(3);
+    harmonicsSpinbox->setValue(5);
 }
 
 void Analysis::clearPlots()
