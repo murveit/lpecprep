@@ -26,51 +26,48 @@ void clearPlot(QCustomPlot *plot)
     plot->clearItems();
 }
 
-void addTableRow(QTableWidget *table, const QString &col1, const QString &col2 = "", const QString &col3 = "")
+void addTableRow(QTableWidget *table, const QVector<QString> &cols)
 {
+    if (cols.size() < 1)
+    {
+        fprintf(stderr, "Empty row\n");
+        return;
+    }
     const QColor color1 = Qt::black;
     const QColor color2 = Qt::black;
     int row = table->rowCount();
     table->setRowCount(row + 1);
 
     QTableWidgetItem *item1 = new QTableWidgetItem();
-    item1->setText(col1);
+    item1->setText(cols[0]);
     item1->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     item1->setForeground(color1);
 
-    QTableWidgetItem *item2 = new QTableWidgetItem();
-    item2->setText(col2);
-    item2->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    item2->setForeground(color2);
-
-    if (col2.size() == 0 && col3.size() == 0)
+    // Column 0 spans the other columns
+    if (cols.size() == 1)
     {
-        // Column 0 spans the other columns
-        table->setSpan(row, 0, 1, 3);
+        table->setSpan(row, 0, 1, table->columnCount());
         QFont font = table->font();
         font.setBold(true);
         item1->setFont(font);
     }
-    else if (col3.size() > 0)
-    {
-        QTableWidgetItem *item3 = new QTableWidgetItem();
-        item3->setText(col3);
-        item3->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
-        item3->setForeground(color2);
-        table->setItem(row, 2, item3);
-    }
-    else
-    {
-        // Column 1 spans col 2
-        table->setSpan(row, 1, 1, 2);
-    }
     table->setItem(row, 0, item1);
-    table->setItem(row, 1, item2);
+
+    for (int c = 1; c < cols.size(); c++)
+    {
+        QTableWidgetItem *item2 = new QTableWidgetItem();
+        item2->setText(cols[c]);
+        item2->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        item2->setForeground(color2);
+        if (c == cols.size() - 1 && cols.size() < table->columnCount())
+            table->setSpan(row, c, 1, table->columnCount() - c);
+        table->setItem(row, c, item2);
+    }
 }
 
 // Helper to create tables in the Statistics display.
 // Start the table, displaying the heading and timing information, common to all sessions.
-void setupTable(QTableWidget *table)
+void setupTable(QTableWidget *table, int numColumns)
 {
     table->clear();
     QFont font = table->font();
@@ -78,12 +75,12 @@ void setupTable(QTableWidget *table)
     table->setFont(font);
     table->setRowCount(0);
     table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    table->setColumnCount(3);
+    table->setColumnCount(numColumns);
     table->verticalHeader()->setDefaultSectionSize(20);
     table->horizontalHeader()->setStretchLastSection(false);
     table->setColumnWidth(0, 50);
-    table->setColumnWidth(1, 30);
-    table->setColumnWidth(2, 30);
+    for (int i = 1; i < numColumns; i++)
+        table->setColumnWidth(i, 30);
     table->setShowGrid(false);
     table->setWordWrap(true);
     table->horizontalHeader()->hide();
@@ -220,14 +217,16 @@ void Analysis::doPlots()
 
     QVector<FreqDomain::Harmonics> harmonics;
     PECData smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
-    setupTable(peaksTable);
-    addTableRow(peaksTable, "Harmonics used");
-    addTableRow(peaksTable, "Period", "Mag", "Phase");
+    setupTable(peaksTable, 3);
+    addTableRow(peaksTable, QVector<QString>({"Harmonics used"}));
+    addTableRow(peaksTable, {"Period", "Mag", "Phase"});
     for (const auto &h : harmonics)
         addTableRow(peaksTable,
-                    QString("%1s").arg(h.period, 0, 'f', 1),
-                    QString("%1").arg(h.magnitude, 0, 'f', 1),
-                    QString("%1º").arg(h.phase, 0, 'f', 1));
+    {
+        QString("%1s").arg(h.period, 0, 'f', 1),
+        QString("%1").arg(h.magnitude, 0, 'f', 1),
+        QString("%1º").arg(h.phase, 0, 'f', 1)
+    });
     Stats smoothStats(smoothedData);
     if (smoothedCB->isChecked())
     {
@@ -258,34 +257,38 @@ void Analysis::doPlots()
     pePlot->xAxis->setRange(minX, maxX);
     pePlot->yAxis->setRange(minY - yRange * .2, maxY + yRange * .2);
 
-    setupTable(statisticsTable);
+    setupTable(statisticsTable, 3);
 
-    addTableRow(statisticsTable, "Raw Data", "");
-    addTableRow(statisticsTable, "p-p PE",
-                QString("%1").arg(-rawStats.maxNegError(), 0, 'f', 2),
-                QString("%1").arg(rawStats.maxPosError(), 0, 'f', 2));
-    addTableRow(statisticsTable, "RMS", QString("%1").arg(rawStats.rmsError(), 0, 'f', 2));
+    addTableRow(statisticsTable, {"Raw Data"});
+    addTableRow(statisticsTable, {"p-p PE",
+                                  QString("%1").arg(-rawStats.maxNegError(), 0, 'f', 2),
+                                  QString("%1").arg(rawStats.maxPosError(), 0, 'f', 2)
+                                 });
+    addTableRow(statisticsTable, {"RMS", QString("%1").arg(rawStats.rmsError(), 0, 'f', 2)});
 
     if (linearRegressionCB->isChecked())
     {
-        addTableRow(statisticsTable, "Normalized", "");
-        addTableRow(statisticsTable, "p-p PE",
-                    QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
-                    QString("%1").arg(regStats.maxPosError(), 0, 'f', 2));
-        addTableRow(statisticsTable, "RMS", QString("%1").arg(regStats.rmsError(), 0, 'f', 2));
+        addTableRow(statisticsTable, {"Normalized"});
+        addTableRow(statisticsTable, {"p-p PE",
+                                      QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
+                                      QString("%1").arg(regStats.maxPosError(), 0, 'f', 2)
+                                     });
+        addTableRow(statisticsTable, {"RMS", QString("%1").arg(regStats.rmsError(), 0, 'f', 2)});
     }
 
-    addTableRow(statisticsTable, "PEC", "");
-    addTableRow(statisticsTable, "p-p PE",
-                QString("%1").arg(-smoothStats.maxNegError(), 0, 'f', 2),
-                QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2));
-    addTableRow(statisticsTable, "RMS", QString("%1").arg(smoothStats.rmsError(), 0, 'f', 2));
+    addTableRow(statisticsTable, {"PEC"});
+    addTableRow(statisticsTable, {"p-p PE",
+                                  QString("%1").arg(-smoothStats.maxNegError(), 0, 'f', 2),
+                                  QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2)
+                                 });
+    addTableRow(statisticsTable, {"RMS", QString("%1").arg(smoothStats.rmsError(), 0, 'f', 2)});
 
-    addTableRow(statisticsTable, "Residual", "");
-    addTableRow(statisticsTable, "p-p PE",
-                QString("%1").arg(-residualStats.maxNegError(), 0, 'f', 2),
-                QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2));
-    addTableRow(statisticsTable, "RMS", QString("%1").arg(residualStats.rmsError(), 0, 'f', 2));
+    addTableRow(statisticsTable, {"Residual"});
+    addTableRow(statisticsTable, {"p-p PE",
+                                  QString("%1").arg(-residualStats.maxNegError(), 0, 'f', 2),
+                                  QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2)
+                                 });
+    addTableRow(statisticsTable, {"RMS", QString("%1").arg(residualStats.rmsError(), 0, 'f', 2)});
 
     finishPlots();
 }
