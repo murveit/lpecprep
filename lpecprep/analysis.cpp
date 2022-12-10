@@ -108,7 +108,7 @@ Analysis::Analysis()
     setDefaults();
     setupKeyboardShortcuts();
 
-    binIn->setText("1");
+    binIn->setText("2");
     binIn->setValidator( new QIntValidator(1, 10, this) );
     focalLengthIn->setText("2000");
     focalLengthIn->setValidator( new QIntValidator(1, 10000, this) );
