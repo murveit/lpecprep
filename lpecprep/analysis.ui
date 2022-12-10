@@ -428,7 +428,7 @@
         </sizepolicy>
        </property>
        <property name="title">
-        <string>Harmonics Used</string>
+        <string/>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

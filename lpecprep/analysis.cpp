@@ -411,7 +411,7 @@ void Analysis::initPlots()
     // Note that these don't store the pen (skinny lines) and need to set the pen when drawing.
     RAW_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::lightGray, "Raw");
     TREND_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::blue, "Trend");
-    NOISE_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::green, "Noise");
+    NOISE_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::darkGreen, "Noise");
     SMOOTHED_PLOT = initPlot(pePlot, pePlot->yAxis, QCPGraph::lsLine, Qt::red, "Smooth");
 
     connect(rawCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
