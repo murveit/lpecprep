@@ -54,10 +54,14 @@ class FreqDomain
             return m_maxMagnitude;
         }
 
-        // Currently, generate PECData of given length using just the single peak frequency.
-        // The generated signal repeats each worm period.
+        // Generate PECData of given length using a number of harmonics of the worm period.
+        // Can also return which harmonics were used.
         PECData generate(int length, int wormPeriod, int numHarmonics,
                          QVector<Harmonics> *harmonics = nullptr) const;
+
+        // Generate PECData of given length using a high-pass filter (i.e. removing the frequency
+        // components lower than wormFrequencyFactor * the worm-period's corresponding frequency.
+        PECData generateHighPass(int length, int wormPeriod, double wormFrequencyFactor) const;
 
     private:
         void setupBuffer(int size);

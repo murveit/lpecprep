@@ -86,7 +86,7 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
     if (wormPeriodIndex <= 0 || wormPeriodIndex >= fftSize)
         return PECData();
 
-    // Copy the real & imaginary values;
+    // Zero the real & imaginary values;
     double *newData = new double[fftSize];
     double *dptr = newData;
     for (int i = 0; i < fftSize; ++i)
@@ -120,7 +120,6 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
     // Copy the filtered data into a PECData
     PECData output;
     int sampleIndex = 0;
-    double minNew = 1e6, maxNew = -1;
     for (int i = 0; i < length; ++i)
     {
         if (sampleIndex >= wormPeriod) sampleIndex = 0;
@@ -128,8 +127,45 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
         const double newSignal = newData[sampleIndex] * scale;
         const double time = m_startTime + i * m_timePerSample;
         output.push_back(PECSample(time, newSignal));
-        if (newSignal > maxNew) maxNew = newSignal;
-        if (newSignal < minNew) minNew = newSignal;
+    }
+    delete[] newData;
+    return output;
+}
+
+// This creates a high-pass version of the data by running an inverse fft where the real
+// and imaginary values for frequencies below wormPeriodFactor * wormFrequency are set to 0.
+// Above wormFrequency = 1 / wormPeriod.
+PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFrequencyFactor) const
+{
+    const int wormPeriodIndex = 0.5 + 1.0 / (wormPeriod * m_freqPerSample); // 171 for 383s.
+    if (wormPeriodIndex <= 0 || wormPeriodIndex >= fftSize)
+        return PECData();
+
+    // Copy in all the real & imaginary values;
+    double *newData = new double[fftSize];
+    double *dptr = newData;
+    for (int i = 0; i < fftSize; ++i)
+        *dptr++ = fftData[i];
+
+    // Zero the low-frequency real & imaginary values;
+    const int lowFrequencyBoundary = wormPeriodIndex * wormFrequencyFactor;
+    for (int i = 0; i <= lowFrequencyBoundary; ++i)
+    {
+        newData[i] = 0;
+        newData[fftSize - i] = 0;
+    }
+    FFTUtil fft(fftSize);
+    fft.inverse(newData);
+
+    // Copy the filtered data into a PECData
+    PECData output;
+    int sampleIndex = 0;
+    for (int i = 0; i < length; ++i)
+    {
+        if (sampleIndex++ >= fftSize) sampleIndex = 0;
+        const double newSignal = newData[sampleIndex];
+        const double time = m_startTime + i * m_timePerSample;
+        output.push_back(PECSample(time, newSignal));
     }
     delete[] newData;
     return output;

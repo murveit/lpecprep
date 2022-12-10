@@ -108,6 +108,14 @@ Analysis::Analysis()
     setDefaults();
     setupKeyboardShortcuts();
 
+    binIn->setText("1");
+    binIn->setValidator( new QIntValidator(1, 10, this) );
+    focalLengthIn->setText("2000");
+    focalLengthIn->setValidator( new QIntValidator(1, 10000, this) );
+    pixelSizeIn->setText("3.80");
+    pixelSizeIn->setValidator( new QDoubleValidator(0.1, 50.0, 2, this) );
+    connect(binIn, &QLineEdit::textEdited, this, &Analysis::paramsChanged);
+
     connect(newFileButton, &QPushButton::pressed, this, &Analysis::getFileFromUser);
 
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
@@ -117,13 +125,21 @@ Analysis::Analysis()
     readFile(filename);
 }
 
+void Analysis::paramsChanged()
+{
+    if (!filenameLabel->text().isEmpty())
+        readFile(filenameLabel->text());
+}
+
 void Analysis::readFile(const QString &filename)
 {
     filenameLabel->setText(filename);
 
-    // FIX HARDCODED PARAMS
-    fprintf(stderr, "Using hardcoded file and params\n");
-    Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
+    const double focalLength = QString(focalLengthIn->text()).toDouble();
+    const double pixelSize = QString(pixelSizeIn->text()).toDouble();
+    const double bin = QString(binIn->text()).toDouble();
+    const double dec = 1.0; // Declanation compensation NYI.
+    const Params p(focalLength, pixelSize * bin, pixelSize * bin, dec);
 
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
@@ -163,7 +179,11 @@ void Analysis::clearPlots()
 
 void Analysis::doPlots()
 {
+    constexpr int fftSize = 64 * 1024;
     clearPlots();
+
+    if (rawData.empty())
+        return;
 
     double minX = std::numeric_limits<double>::max(), maxX = std::numeric_limits<double>::lowest();
     double minY = std::numeric_limits<double>::max(), maxY = std::numeric_limits<double>::lowest();
@@ -181,6 +201,11 @@ void Analysis::doPlots()
     if (linearRegressionCB->isChecked())
     {
         regData = regressor.run(rawData);
+#if 1
+        FreqDomain freqs;
+        freqs.load(regData, fftSize);
+        regData = freqs.generateHighPass(rawData.size(), periodSpinbox->value(), 0.666);
+#endif
         regStats = Stats(regData);
         if (trendCB->isChecked())
         {
@@ -191,7 +216,6 @@ void Analysis::doPlots()
     else
         regData = rawData;
 
-    constexpr int fftSize = 64 * 1024;
     plotPeaks(regData, fftSize);
 
     QVector<FreqDomain::Harmonics> harmonics;

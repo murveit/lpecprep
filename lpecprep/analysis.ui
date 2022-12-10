@@ -14,59 +14,95 @@
    <property name="spacing">
     <number>3</number>
    </property>
-   <item>
-    <widget class="QGroupBox" name="fileBox">
-     <layout class="QHBoxLayout" name="fileLayout">
-      <item>
-       <widget class="QPushButton" name="newFileButton">
-        <property name="maximumSize">
-         <size>
-          <width>65</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>New File</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="filenameLabel">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignBottom|Qt::AlignHCenter</set>
-        </property>
-        <property name="margin">
-         <number>-1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
+   <property name="topMargin">
+    <number>2</number>
+   </property>
+   <property name="bottomMargin">
+    <number>2</number>
+   </property>
    <item>
     <widget class="QGroupBox" name="analysisTopBox">
-     <layout class="QVBoxLayout" name="analysisBoxLayout">
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
+     <property name="title">
+      <string notr="true"/>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <layout class="QVBoxLayout" name="analysisBoxLayout" stretch="0,1,0">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="topMargin">
+       <number>2</number>
+      </property>
+      <property name="bottomMargin">
+       <number>2</number>
+      </property>
+      <item>
+       <widget class="QGroupBox" name="fileBox">
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+        <layout class="QHBoxLayout" name="fileLayout">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <property name="topMargin">
+          <number>2</number>
+         </property>
+         <property name="bottomMargin">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="newFileButton">
+           <property name="maximumSize">
+            <size>
+             <width>65</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>New File</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="filenameLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignBottom|Qt::AlignHCenter</set>
+           </property>
+           <property name="margin">
+            <number>-1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
       <item>
        <layout class="QHBoxLayout" name="AnalysisPlotsLayout">
         <item>
@@ -86,7 +122,7 @@
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>300</height>
+            <height>16777215</height>
            </size>
           </property>
          </widget>
@@ -108,7 +144,7 @@
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>300</height>
+            <height>16777215</height>
            </size>
           </property>
           <property name="font">
@@ -124,6 +160,15 @@
        <layout class="QHBoxLayout" name="Checkboxes">
         <item>
          <widget class="QCheckBox" name="rawCB">
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>View raw input data</string>
+          </property>
           <property name="text">
            <string>Raw</string>
           </property>
@@ -131,34 +176,212 @@
         </item>
         <item>
          <widget class="QCheckBox" name="trendCB">
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>View input with slow moving variation removed</string>
+          </property>
           <property name="text">
-           <string>Raw Trend</string>
+           <string>Normalized</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="noiseCB">
+          <property name="maximumSize">
+           <size>
+            <width>80</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>View &quot;Input - PEC curve&quot;</string>
+          </property>
           <property name="text">
-           <string>Noise</string>
+           <string>Residual</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="smoothedCB">
+          <property name="maximumSize">
+           <size>
+            <width>90</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>View the PEC curve</string>
+          </property>
           <property name="text">
-           <string>Smoothed</string>
+           <string>PEC curve</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QCheckBox" name="linearRegressionCB">
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Recommended checked. Should the slow-moving variations be removed before analysis</string>
+          </property>
           <property name="text">
-           <string>Linear Regression</string>
+           <string>Normalize</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="pixelSizeLabel">
+          <property name="maximumSize">
+           <size>
+            <width>70</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Pixel size in microns</string>
+          </property>
+          <property name="text">
+           <string>Pixel Size:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="pixelSizeIn">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Pixel size in microns</string>
+          </property>
+          <property name="text">
+           <string>3.80</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Focal Length</string>
+          </property>
+          <property name="text">
+           <string>FL:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="focalLengthIn">
+          <property name="maximumSize">
+           <size>
+            <width>40</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Focal Length</string>
+          </property>
+          <property name="text">
+           <string>2000</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="binLabel">
+          <property name="maximumSize">
+           <size>
+            <width>30</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Pixel binning</string>
+          </property>
+          <property name="text">
+           <string>Bin:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="binIn">
+          <property name="maximumSize">
+           <size>
+            <width>20</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Pixel binning</string>
+          </property>
+          <property name="text">
+           <string>2</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="periodLabel">
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Mount's worm gear period in seconds</string>
+          </property>
           <property name="text">
            <string>Period</string>
           </property>
@@ -169,11 +392,23 @@
         </item>
         <item>
          <widget class="QSpinBox" name="periodSpinbox">
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Mount's worm gear period in seconds</string>
+          </property>
           <property name="minimum">
            <number>2</number>
           </property>
           <property name="maximum">
            <number>10000</number>
+          </property>
+          <property name="value">
+           <number>383</number>
           </property>
          </widget>
         </item>

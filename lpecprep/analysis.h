@@ -30,6 +30,7 @@ class Analysis : public QWidget, public Ui::Analysis
         void doPlots();
         void readFile(const QString &filename);
         void getFileFromUser();
+        void paramsChanged();
 
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
         void plotPeriods(const QVector<PECData> &data, double minY, double maxY);
