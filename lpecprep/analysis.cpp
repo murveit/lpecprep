@@ -268,14 +268,14 @@ void Analysis::doPlots()
 
     if (linearRegressionCB->isChecked())
     {
-        addTableRow(statisticsTable, "Regressed", "");
+        addTableRow(statisticsTable, "Normalized", "");
         addTableRow(statisticsTable, "p-p PE",
                     QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
                     QString("%1").arg(regStats.maxPosError(), 0, 'f', 2));
         addTableRow(statisticsTable, "RMS", QString("%1").arg(regStats.rmsError(), 0, 'f', 2));
     }
 
-    addTableRow(statisticsTable, "Smoothed", "");
+    addTableRow(statisticsTable, "PEC", "");
     addTableRow(statisticsTable, "p-p PE",
                 QString("%1").arg(-smoothStats.maxNegError(), 0, 'f', 2),
                 QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2));
