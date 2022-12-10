@@ -141,19 +141,31 @@ PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFreq
     if (wormPeriodIndex <= 0 || wormPeriodIndex >= fftSize)
         return PECData();
 
-    // Copy in all the real & imaginary values;
+    // Copy in all the real & imaginary values.
     double *newData = new double[fftSize];
     double *dptr = newData;
     for (int i = 0; i < fftSize; ++i)
         *dptr++ = fftData[i];
 
-    // Zero the low-frequency real & imaginary values;
+    // Zero the low-frequency real & imaginary values.
     const int lowFrequencyBoundary = wormPeriodIndex * wormFrequencyFactor;
     for (int i = 0; i <= lowFrequencyBoundary; ++i)
     {
         newData[i] = 0;
         newData[fftSize - i] = 0;
     }
+
+    fprintf(stderr, "Removing high-frequency data as well.\n");
+    // Zero the very high-frequency real & imaginary values too.
+    // The index for a 2.5 second period
+    const int highFrequencyIndex = 0.5 + 1.0 / (4 * m_freqPerSample);
+    fprintf(stderr, "Removing from %d\n", highFrequencyIndex);
+    for (int i = highFrequencyIndex; i <= fftSize / 2; ++i)
+    {
+        newData[i] = 0;
+        newData[fftSize - i] = 0;
+    }
+
     FFTUtil fft(fftSize);
     fft.inverse(newData);
 

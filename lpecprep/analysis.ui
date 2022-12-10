@@ -418,47 +418,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="LowerSection" stretch="1,1,4">
-     <item>
-      <widget class="QGroupBox" name="StatisticsBox">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="title">
-        <string>Statistics</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-       <layout class="QVBoxLayout" name="StatisticsLayout">
-        <item>
-         <widget class="QTableWidget" name="statisticsTable">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>170</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAsNeeded</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAsNeeded</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </item>
+    <layout class="QHBoxLayout" name="LowerSection" stretch="1,1">
      <item>
       <widget class="QGroupBox" name="peaksBox">
        <property name="sizePolicy">
@@ -474,6 +434,28 @@
         <set>Qt::AlignCenter</set>
        </property>
        <layout class="QVBoxLayout" name="peaksLayout">
+        <item>
+         <widget class="QTableWidget" name="statisticsTable">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>250</width>
+            <height>110</height>
+           </size>
+          </property>
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+         </widget>
+        </item>
         <item>
          <layout class="QHBoxLayout" name="numHarmonicsLayout">
           <item>
@@ -520,7 +502,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>170</width>
+            <width>250</width>
             <height>16777215</height>
            </size>
           </property>

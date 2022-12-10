@@ -78,7 +78,7 @@ void setupTable(QTableWidget *table, int numColumns)
     table->setColumnCount(numColumns);
     table->verticalHeader()->setDefaultSectionSize(20);
     table->horizontalHeader()->setStretchLastSection(false);
-    table->setColumnWidth(0, 50);
+    table->setColumnWidth(0, 80);
     for (int i = 1; i < numColumns; i++)
         table->setColumnWidth(i, 30);
     table->setShowGrid(false);
@@ -257,39 +257,34 @@ void Analysis::doPlots()
     pePlot->xAxis->setRange(minX, maxX);
     pePlot->yAxis->setRange(minY - yRange * .2, maxY + yRange * .2);
 
-    setupTable(statisticsTable, 3);
+    setupTable(statisticsTable, 4);
 
-    addTableRow(statisticsTable, {"Raw Data"});
-    addTableRow(statisticsTable, {"p-p PE",
+    addTableRow(statisticsTable, {"",  "Max-", "Max+", "RMS"});
+    addTableRow(statisticsTable, {"Raw Data",
                                   QString("%1").arg(-rawStats.maxNegError(), 0, 'f', 2),
-                                  QString("%1").arg(rawStats.maxPosError(), 0, 'f', 2)
+                                  QString("%1").arg(rawStats.maxPosError(), 0, 'f', 2),
+                                  QString("%1").arg(rawStats.rmsError(), 0, 'f', 2)
                                  });
-    addTableRow(statisticsTable, {"RMS", QString("%1").arg(rawStats.rmsError(), 0, 'f', 2)});
 
     if (linearRegressionCB->isChecked())
     {
-        addTableRow(statisticsTable, {"Normalized"});
-        addTableRow(statisticsTable, {"p-p PE",
+        addTableRow(statisticsTable, {"Norm",
                                       QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
-                                      QString("%1").arg(regStats.maxPosError(), 0, 'f', 2)
+                                      QString("%1").arg(regStats.maxPosError(), 0, 'f', 2),
+                                      QString("%1").arg(regStats.rmsError(), 0, 'f', 2)
                                      });
-        addTableRow(statisticsTable, {"RMS", QString("%1").arg(regStats.rmsError(), 0, 'f', 2)});
     }
-
-    addTableRow(statisticsTable, {"PEC"});
-    addTableRow(statisticsTable, {"p-p PE",
+    addTableRow(statisticsTable, {"PEC",
                                   QString("%1").arg(-smoothStats.maxNegError(), 0, 'f', 2),
-                                  QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2)
+                                  QString("%1").arg(smoothStats.maxPosError(), 0, 'f', 2),
+                                  QString("%1").arg(smoothStats.rmsError(), 0, 'f', 2)
                                  });
-    addTableRow(statisticsTable, {"RMS", QString("%1").arg(smoothStats.rmsError(), 0, 'f', 2)});
 
-    addTableRow(statisticsTable, {"Residual"});
-    addTableRow(statisticsTable, {"p-p PE",
+    addTableRow(statisticsTable, {"Residual",
                                   QString("%1").arg(-residualStats.maxNegError(), 0, 'f', 2),
-                                  QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2)
+                                  QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2),
+                                  QString("%1").arg(residualStats.rmsError(), 0, 'f', 2)
                                  });
-    addTableRow(statisticsTable, {"RMS", QString("%1").arg(residualStats.rmsError(), 0, 'f', 2)});
-
     finishPlots();
 }
 
