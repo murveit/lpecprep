@@ -14,7 +14,7 @@ PECData LinearRegress::run(const PECData &data)
     const double size = data.size();
     if (size == 0) return PECData(); // something else?
 
-    for (const PECSample d : data)
+    for (const PECSample d : data.samples())
     {
         xySum += d.time * d.signal;
         xSum += d.time;

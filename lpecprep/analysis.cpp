@@ -174,6 +174,14 @@ void Analysis::clearPlots()
     clearPlot(peaksPlot);
 }
 
+namespace
+{
+void estimateWormPeriod(const PECData &data)
+{
+
+}
+}  // namespace
+
 void Analysis::doPlots()
 {
     constexpr int fftSize = 64 * 1024;
@@ -186,6 +194,7 @@ void Analysis::doPlots()
     double minY = std::numeric_limits<double>::max(), maxY = std::numeric_limits<double>::lowest();
 
     Stats rawStats(rawData);
+    estimateWormPeriod(rawData);
 
     if (rawCB->isChecked())
     {
@@ -310,7 +319,8 @@ PECData Analysis::getNoiseData(const PECData &signal, const PECData &correction)
                     i, signal[i].time, correction[i].time);
             return PECData();
         }
-        output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal, signal[i].position));
+        output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal,
+                                   signal[i].position));
     }
     return output;
 }
@@ -331,7 +341,7 @@ void Analysis::plotPeriods(const QVector<PECData> &periods, double minY, double 
         auto color = colors[cIndex++ % colors.size()];
         int plt = initPlot(overlapPlot, overlapPlot->yAxis, QCPGraph::lsLine, color, "");
         auto plot = overlapPlot->graph(plt);
-        for (const auto &v : p)
+        for (const auto &v : p.samples())
             plot->addData(v.time, v.signal);
     }
 

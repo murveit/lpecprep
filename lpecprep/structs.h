@@ -30,7 +30,42 @@ struct PECSample
   PECSample(double t, double s, double p) : time(t), signal(s), position(p), cycle(0) {}
 };
 
-typedef QVector<PECSample> PECData;
+//typedef QVector<PECSample> PECData;
+
+class PECData
+{
+public:
+    bool empty() const
+    {
+        return data.empty();
+    }
+    void clear()
+    {
+         data.clear();
+    }
+    int size() const
+    {
+        return data.size();
+    }
+    void push_back(const PECSample &sample)
+    {
+        data.push_back(sample);
+    }
+    const PECSample & last() const
+    {
+        return data.last();
+    }
+    const PECSample & operator[](std::size_t idx) const
+    {
+        return data[idx];
+    }
+    const QVector<PECSample> & samples() const
+    {
+        return data;
+    }
+private:
+    QVector<PECSample> data;
+};
 
 struct GraphData
 {
