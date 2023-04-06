@@ -118,7 +118,7 @@ Analysis::Analysis()
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
-    QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-11-29T19-46-51-edited.txt");
+    QString filename("/home/hy/Desktop/SharedFolder/PECdata2/guide_log-2023-03-26T21-01-57.txt");
     readFile(filename);
 }
 
@@ -147,7 +147,7 @@ void Analysis::readFile(const QString &filename)
 void Analysis::getFileFromUser()
 {
     QUrl inputURL = QFileDialog::getOpenFileUrl(this, "Select input file",
-                    QUrl("file:///home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA3"));
+                    QUrl("file:///home/hy/Desktop/SharedFolder/PECdata2"));
     if (!inputURL.isEmpty())
         readFile(inputURL.toString(QUrl::PreferLocalFile));
 }
@@ -197,13 +197,16 @@ void Analysis::doPlots()
     Stats regStats(rawData);
     if (linearRegressionCB->isChecked())
     {
+        // Linear regress the data.
         regData = regressor.run(rawData);
-#if 1
+
+        // Highpass the data.
         FreqDomain freqs;
         freqs.load(regData, fftSize);
         regData = freqs.generateHighPass(rawData.size(), periodSpinbox->value(), 0.666);
-#endif
+
         regStats = Stats(regData);
+        // Plot the normalized data.
         if (trendCB->isChecked())
         {
             updateLimits(regStats, &minX, &maxX, &minY, &maxY);
@@ -212,6 +215,8 @@ void Analysis::doPlots()
     }
     else
         regData = rawData;
+
+    freqDomain.load(regData, fftSize);
 
     plotPeaks(regData, fftSize);
 
@@ -305,7 +310,7 @@ PECData Analysis::getNoiseData(const PECData &signal, const PECData &correction)
                     i, signal[i].time, correction[i].time);
             return PECData();
         }
-        output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal));
+        output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal, signal[i].position));
     }
     return output;
 }
@@ -340,8 +345,6 @@ void Analysis::plotPeaks(const PECData &samples, int fftSize)
 
     peaksPlot->clearGraphs();
     if (sampleSize <= 2) return;
-
-    freqDomain.load(samples, fftSize);
 
     QColor color = Qt::red;
     int plt = initPlot(peaksPlot, peaksPlot->yAxis, peaksLineType, color, "");
@@ -382,7 +385,10 @@ QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) c
         {
             PECSample s = data[upto];
             if (j == 0)
+            {
                 startTime = s.time;
+                fprintf(stderr, "Wraparound at %.0f\n", s.position);
+            }
             s.time -= startTime;
             p.push_back(s);
             upto++;

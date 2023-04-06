@@ -34,6 +34,7 @@ void FreqDomain::setupBuffer(int size)
 
 void FreqDomain::load(const PECData &samples, int size)
 {
+    m_inputSamples = samples;
     // This sets up fftSize
     setupBuffer(size);
 
@@ -126,7 +127,9 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
         if (sampleIndex++ >= fftSize) sampleIndex = 0;
         const double newSignal = newData[sampleIndex] * scale;
         const double time = m_startTime + i * m_timePerSample;
-        output.push_back(PECSample(time, newSignal));
+        // Not sure about this position
+        const int position = i >= m_inputSamples.size() ? -1 : m_inputSamples[i].position;
+        output.push_back(PECSample(time, newSignal, position));
     }
     delete[] newData;
     return output;
@@ -155,11 +158,10 @@ PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFreq
         newData[fftSize - i] = 0;
     }
 
-    fprintf(stderr, "Removing high-frequency data as well.\n");
     // Zero the very high-frequency real & imaginary values too.
     // The index for a 2.5 second period
     const int highFrequencyIndex = 0.5 + 1.0 / (4 * m_freqPerSample);
-    fprintf(stderr, "Removing from %d\n", highFrequencyIndex);
+    fprintf(stderr, "Removing high-frequency data (indeces > %d)\n", highFrequencyIndex);
     for (int i = highFrequencyIndex; i <= fftSize / 2; ++i)
     {
         newData[i] = 0;
@@ -177,7 +179,9 @@ PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFreq
         if (sampleIndex++ >= fftSize) sampleIndex = 0;
         const double newSignal = newData[sampleIndex];
         const double time = m_startTime + i * m_timePerSample;
-        output.push_back(PECSample(time, newSignal));
+        // Not sure about this position
+        const int position = i >= m_inputSamples.size() ? -1 : m_inputSamples[i].position;
+        output.push_back(PECSample(time, newSignal, position));
     }
     delete[] newData;
     return output;

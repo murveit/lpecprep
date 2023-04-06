@@ -37,7 +37,7 @@ PECData LinearRegress::run(const PECData &data)
         double newSignal = s.signal - (m_slope * s.time) - m_intercept;
         if (newSignal > m_maxValue) m_maxValue = newSignal;
         if (newSignal < m_minValue) m_minValue = newSignal;
-        regressed.push_back(PECSample(s.time, newSignal));
+        regressed.push_back(PECSample(s.time, newSignal, s.position));
         //// I dropped the computation of deltaPos and DeltaNeg here
     }
     return regressed;

@@ -28,6 +28,8 @@ class PhdConvert : public QObject
         void processInputLine(const QString &line, RaDec channel);
         void resetData(const QDateTime &startTime);
         void setColumnIndeces();
+        void expandData();
+        void findWormPositionDirection();
 
         // When the guiding session started.
         QDateTime startTime;
@@ -35,7 +37,11 @@ class PhdConvert : public QObject
         QStringList colList;
         // Indeces of the phd2 sample values in a logfile line.
         int dxIndex = -1, dyIndex, raRawIndex, decRawIndex;
+        int wormPosIndex = -1;
 
+        bool m_hasWormPosition = false;
+        bool m_wormIncreasing = false;
+        double m_maxWormPosition = -1;
         // It just extracts one sequence (the final one) from the file.
         PECData data;
 

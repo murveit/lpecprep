@@ -86,6 +86,8 @@ class FreqDomain
 
         // Number of samples in the input data.
         int m_sampleSize = 0;
+
+        PECData m_inputSamples;
 };
 
 #endif // FREQDOMAIN

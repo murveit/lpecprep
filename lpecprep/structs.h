@@ -26,7 +26,8 @@ struct PECSample
   double position;
   int cycle;
   PECSample() : time(0), signal(0), position(0), cycle(0) {}
-  PECSample(double t, double s) : time(t), signal(s), position(0), cycle(0) {}
+  //PECSample(double t, double s) : time(t), signal(s), position(0), cycle(0) {}
+  PECSample(double t, double s, double p) : time(t), signal(s), position(p), cycle(0) {}
 };
 
 typedef QVector<PECSample> PECData;
