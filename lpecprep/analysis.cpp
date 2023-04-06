@@ -322,6 +322,7 @@ PECData Analysis::getNoiseData(const PECData &signal, const PECData &correction)
         output.push_back(PECSample(signal[i].time, signal[i].signal - correction[i].signal,
                                    signal[i].position));
     }
+    output.copyWormParams(signal);
     return output;
 }
 
@@ -403,6 +404,7 @@ QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) c
             p.push_back(s);
             upto++;
         }
+        p.copyWormParams(data);
         periods.push_back(p);
     }
     return periods;

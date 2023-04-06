@@ -63,6 +63,17 @@ public:
     {
         return data;
     }
+    void copyWormParams(const PECData &pData)
+    {
+        hasWormPosition = pData.hasWormPosition;
+        wormIncreasing = pData.wormIncreasing;
+        maxWormPosition = pData.maxWormPosition;
+    }
+
+    bool hasWormPosition = false;
+    bool wormIncreasing = false;
+    double maxWormPosition = -1;
+
 private:
     QVector<PECSample> data;
 };

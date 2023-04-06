@@ -31,6 +31,7 @@ PECData LinearRegress::run(const PECData &data)
     m_maxValue = 0;
     m_minValue = 1e9;
     PECData regressed;
+
     for (int i = 0; i < size; ++i)
     {
         const PECSample &s = data[i];
@@ -38,7 +39,8 @@ PECData LinearRegress::run(const PECData &data)
         if (newSignal > m_maxValue) m_maxValue = newSignal;
         if (newSignal < m_minValue) m_minValue = newSignal;
         regressed.push_back(PECSample(s.time, newSignal, s.position));
-        //// I dropped the computation of deltaPos and DeltaNeg here
     }
+    regressed.copyWormParams(data);
+
     return regressed;
 }

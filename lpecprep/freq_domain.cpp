@@ -132,6 +132,7 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
         output.push_back(PECSample(time, newSignal, position));
     }
     delete[] newData;
+    output.copyWormParams(m_inputSamples);
     return output;
 }
 
@@ -184,5 +185,6 @@ PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFreq
         output.push_back(PECSample(time, newSignal, position));
     }
     delete[] newData;
+    output.copyWormParams(m_inputSamples);
     return output;
 }

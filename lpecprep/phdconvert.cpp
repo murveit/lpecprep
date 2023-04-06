@@ -57,6 +57,9 @@ void PhdConvert::convert(const QString &filename)
 #endif
 
     expandData();
+    data.hasWormPosition = m_hasWormPosition;
+    data.wormIncreasing = m_wormIncreasing;
+    data.maxWormPosition = m_maxWormPosition;
 }
 
 void PhdConvert::setColumnIndeces()
