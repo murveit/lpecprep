@@ -53,6 +53,10 @@ class FreqDomain
         {
             return m_maxMagnitude;
         }
+        int maxMagnitudeIndex() const
+        {
+            return m_maxMagnitudeIndex;
+        }
 
         // Generate PECData of given length using a number of harmonics of the worm period.
         // Can also return which harmonics were used.

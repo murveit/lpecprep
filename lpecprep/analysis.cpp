@@ -176,9 +176,31 @@ void Analysis::clearPlots()
 
 namespace
 {
-void estimateWormPeriod(const PECData &data)
+// Find corresponding worm positions and the time between them.
+// Note--this would only work with a worm that wraps around and
+// several periods sampled.
+double estimateWormPeriod(const PECData &data)
 {
+    if (data.empty())
+        return 0.0;
 
+    PECData temp;
+    double sum = 0;
+    for (int i = 0; i < data.size(); ++i)
+    {
+        double val = data[i].position;
+        sum += val;
+    }
+    double mean = sum / data.size();
+    for (int i = 0; i < data.size(); ++i)
+        temp.push_back(PECSample(i, data[i].position - mean, -1));
+
+    constexpr int fftSize = 64 * 1024;
+    FreqDomain freqs;
+    freqs.load(temp, fftSize);
+    const double wormPeriodEstimate = fftSize / (double) freqs.maxMagnitudeIndex();
+    fprintf(stderr, "Worm period estimate: %.1fs\n", wormPeriodEstimate);
+    return wormPeriodEstimate;
 }
 }  // namespace
 
