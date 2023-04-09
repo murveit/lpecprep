@@ -33,6 +33,7 @@ class Analysis : public QWidget, public Ui::Analysis
         void paramsChanged();
 
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
+        QVector<PECData> separatePecPeriodsByWorm(const PECData &data, int startWormPosition) const;
         void plotPeriods(const QVector<PECData> &data, double minY, double maxY);
         void plotPeaks(const PECData &data, int fftSize);
         PECData getNoiseData(const PECData &signal, const PECData &correction);

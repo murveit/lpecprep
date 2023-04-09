@@ -282,6 +282,10 @@ void Analysis::doPlots()
     constexpr int maxPeriodPlots = 50;
     if (pecPeriod > 1 && regData.size() / pecPeriod <= maxPeriodPlots)
     {
+        ////////////////////////////////////////////////////////////////////
+        ////QVector<PECData> periodData = separatePecPeriodsByWorm(regData, 0);
+        ////////////////////////////////////////////////////////////////////
+
         QVector<PECData> periodData = separatePecPeriods(regData, pecPeriod);
         if (linearRegressionCB->isChecked())
             plotPeriods(periodData, regStats.minValue(), regStats.maxValue());
@@ -429,6 +433,97 @@ QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) c
         p.copyWormParams(data);
         periods.push_back(p);
     }
+    return periods;
+}
+
+// find the next time wormPosition is
+int findWormPosition(const PECData &data, int position, int startIndex)
+{
+    const int size = data.size();
+    if (!data.hasWormPosition || startIndex >= size)
+        return -1;
+
+    bool previousBeforePosition = data[startIndex].position == position;
+    if (startIndex > 0)
+    {
+        previousBeforePosition =
+            (data.wormIncreasing && data[startIndex - 1].position < position) ||
+            (!data.wormIncreasing && data[startIndex - 1].position > position);
+
+    }
+
+    for (int i = startIndex; i < size; ++i)
+    {
+        bool nowAfterPosition =
+            (data.wormIncreasing && data[i].position >= position) ||
+            (!data.wormIncreasing && data[i].position <= position);
+        if (previousBeforePosition && nowAfterPosition)
+            return i;
+        previousBeforePosition = !nowAfterPosition;
+    }
+    return -1;
+}
+
+QVector<PECData> Analysis::separatePecPeriodsByWorm(const PECData &data, int startWormPosition) const
+{
+    int size = data.size();
+    int upto = 0;
+    QVector<PECData> periods;
+
+    if (size == 0)
+        return periods;
+
+    // Find all the times we hit the worm position
+    QVector<int> startIndeces;
+    int nextIndex = 0;
+    while (true)
+    {
+        const int next = findWormPosition(data, startWormPosition, nextIndex);
+        if (next < 0)
+            break;
+        startIndeces.push_back(next);
+        nextIndex = next + 1;
+    }
+
+    fprintf(stderr, "Found %d worm starts\n", startIndeces.size());
+    if (startIndeces.size() > 0)
+    {
+        for (int i = 0; i < startIndeces.size(); ++i)
+        {
+            int start = startIndeces[i];
+            double endTime = data[data.size() - 1].time;
+            if (i < startIndeces.size() - 1)
+                endTime = data[startIndeces[i + 1] - 1].time;
+
+            fprintf(stderr, "Start at %5d position %3.0f time %7.1f -> %7.1f, %7.1fs\n", start, data[start].position, data[start].time,
+                    endTime, endTime - data[start].time);
+        }
+        fprintf(stderr, "Initial segment starts at worm %3.0f -> worm %3.0f, time %.1f -> %.1f, %.1fs\n",
+                data[0].position, data[startIndeces[0]].position,
+                data[0].time, data[startIndeces[0]].time,
+                data[startIndeces[0]].time - data[0].time);
+    }
+
+    // Somehow deal with the partial at the start??
+
+    for (int i = 0; i < startIndeces.size(); ++i)
+    {
+        const int start = startIndeces[i];
+        const double startTime = data[start].time;
+        const int nextStart = (i == startIndeces.size() - 1) ? size : startIndeces[i + 1];
+        PECData p;
+
+        for (int j = start; j < nextStart; ++j)
+        {
+            PECSample s = data[j];
+            s.time -= startTime;
+            p.push_back(s);
+        }
+        p.copyWormParams(data);
+        periods.push_back(p);
+        fprintf(stderr, "Found segment with %d samples\n", p.size());
+    }
+
     return periods;
 }
 
