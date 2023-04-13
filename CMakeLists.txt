@@ -77,11 +77,13 @@ set(LPecPrepMain_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/resources.qrc
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/pecwindow.cpp
     )
 
 qt5_wrap_ui(LPecPrepui_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/mainwindow.ui
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/analysis.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/pecwindow.ui
     )
 
 add_executable(LPecPrep ${LPecPrepMain_SRCS} ${LPecPrepui_SRCS} ${LPecPrepApp_ICON})

@@ -43,6 +43,7 @@
 #include "qcustomplot.h"
 #include "version.h"
 #include "analysis.h"
+#include "pecwindow.h"
 
 MainWindow::MainWindow() :
     QMainWindow(),
@@ -60,13 +61,14 @@ MainWindow::MainWindow() :
     ui->toolsWidget->setTabEnabled(index, true);
     index++;
 
-    label = "Periodic Error Correction";
-    widget = new QLabel(label, this);
+    label = "PEC Curve";
+    widget = new PECWindow();
     ui->toolsWidget->insertTab(index, widget, QIcon(), label);
     ui->toolsWidget->setTabText(index, label);
     ui->toolsWidget->setTabEnabled(index, true);
     index++;
 
+#if 0
     label = "PEC Curve Arithmatic";
     widget = new QLabel(label, this);
     ui->toolsWidget->insertTab(index, widget, QIcon(), label);
@@ -91,6 +93,7 @@ MainWindow::MainWindow() :
     //ui->toolsWidget->tabBar()->setTabToolTip(0, QString("Setup"));
     //ui->toolsWidget->tabBar()->setTabToolTip(1, QString("Scheduler"));
     //ui->toolsWidget->tabBar()->setTabToolTip(2, QString("Analyze"));
+#endif
 
     this->show();
 

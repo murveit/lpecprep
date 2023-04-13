@@ -202,6 +202,68 @@ double estimateWormPeriod(const PECData &data)
     fprintf(stderr, "Worm period estimate: %.1fs\n", wormPeriodEstimate);
     return wormPeriodEstimate;
 }
+
+void savePECFile(const QString &filename, const PECData &data, int startPosition, double duration)
+{
+    if (!data.hasWormPosition)
+    {
+        fprintf(stderr, "Can't save PEC file. No worm position\n");
+        return;
+    }
+
+    QFile pecFile;
+    pecFile.setFileName(filename);
+    pecFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&pecFile);
+
+    out << QString("PECincreasing,%1\n").arg(data.wormIncreasing ? "true" : "false");
+    out << QString("PECmaxPosition,%1\n").arg(data.maxWormPosition);
+
+    bool started = false;
+    bool ready = false;
+    double startTime = -1;
+    for (int i = 0; i < data.size(); ++i)
+    {
+        const auto &s = data.samples()[i];
+
+        // Finish if we've output enough.
+        if (started && (s.time - startTime > duration + 0.5))
+            break;
+
+        // Start if we happen to hit the start position.
+        if (!started && fabs((double)startPosition - s.position) <= 0.5)
+        {
+            startTime = s.time;
+            started = true;
+        }
+
+        // Can't just check to see if > start position, since may wrap around.
+        // Must first be < start position before checking for > start position.
+        if (!started && (( data.wormIncreasing && s.position < startPosition) ||
+                         (!data.wormIncreasing && s.position > startPosition)))
+        {
+            ready = true;
+            continue;
+        }
+
+        // Finally check if we've passed the start position.
+        if (!started && ready && (( data.wormIncreasing && s.position >= startPosition) ||
+                                  (!data.wormIncreasing && s.position <= startPosition)))
+        {
+            startTime = s.time;
+            started = true;
+        }
+
+        // Skip this sample if not ready to start.
+        if (!started)
+            continue;
+
+        out << QString("%1,%2\n").arg(s.position).arg(s.signal);
+    }
+    out.flush();
+    fprintf(stderr, "Wrote %s\n", filename.toLatin1().data());
+}
+
 }  // namespace
 
 void Analysis::doPlots()
@@ -253,6 +315,7 @@ void Analysis::doPlots()
 
     QVector<FreqDomain::Harmonics> harmonics;
     PECData smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
+    savePECFile("./PECfile", smoothedData, 0, periodSpinbox->value());
     setupTable(peaksTable, 3);
     addTableRow(peaksTable, QVector<QString>({"Harmonics used"}));
     addTableRow(peaksTable, {"Period", "Mag", "Phase"});
@@ -424,7 +487,6 @@ QVector<PECData> Analysis::separatePecPeriods(const PECData &data, int period) c
             if (j == 0)
             {
                 startTime = s.time;
-                fprintf(stderr, "Wraparound at %.0f\n", s.position);
             }
             s.time -= startTime;
             p.push_back(s);

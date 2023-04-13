@@ -213,8 +213,9 @@ void PhdConvert::expandData()
     data = expanded;
 }
 
-void PhdConvert::processInputLine(const QString &line, RaDec channel)
+void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
 {
+    QString line = rawLine.trimmed();
     if (line.contains("Guiding Begins"))
     {
         // reset the data
