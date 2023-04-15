@@ -73,6 +73,7 @@ void PECWindow::readFile(const QString &filename, PECData *pecData)
         inputFile.close();
         fprintf(stderr, "Read %d data points from %s\n", pecData->size(), filename.toLatin1().data());
     }
+    pecData->name = filename;
 }
 
 void PECWindow::processInputLine(const QString &line, PECData *pecData)
@@ -130,11 +131,17 @@ int initPlot(QCustomPlot *plot, const QString &name)
     return num;
 }
 
+// For now, we always start the plot at 1.0
 void PECWindow::plotData(const PECData &data, int plot)
 {
+    if (data.size() == 0) return;
+
+    const double initialPosition = data[0].signal;
+    const double offset = initialPosition - 1.00;
+    fprintf(stderr, "Plotting PEC starting at 1, so removing offset %.1f\n", offset);
     auto rawPlot = PECPlot->graph(plot);
     for (int i = 0; i < data.size(); i++)
-        rawPlot->addData(data[i].position, data[i].signal);
+        rawPlot->addData(data[i].position, data[i].signal - offset);
 }
 
 void PECWindow::doPlots()
@@ -142,7 +149,9 @@ void PECWindow::doPlots()
     PECPlot->clearGraphs();
     for (int i = 0; i < m_pecData.size(); ++i)
     {
-        int gNum = initPlot(PECPlot, QString("PEC %1").arg(i));
+        QString name = m_pecData[i].name;
+        if (name.size() == 0) name = QString("PEC %1").arg(i);
+        int gNum = initPlot(PECPlot, name);
         plotData(m_pecData[i], gNum);
     }
     PECPlot->xAxis->setRange(0, 1000);

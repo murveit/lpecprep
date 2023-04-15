@@ -140,6 +140,8 @@ void PhdConvert::expandData()
     findWormPositionDirection();
     fprintf(stderr, "Max worm position: %f, data size %d\n", m_maxWormPosition, data.size());
     PECData expanded;
+    ///////////double initialTime = (data.size() > 0) ? data[0].time : 0;/////////
+    ///////////double finalTime = (data.size() > 0) ? data[data.size() - 1].time : 0;////////
     for (int i = 0; i < data.size(); ++i)
     {
         const auto &d = data[i];
@@ -147,6 +149,9 @@ void PhdConvert::expandData()
         const double signal = d.signal;
         const double wormPos = d.position;
         const double interval = expanded.empty() ? 0 : (timeOffset - expanded.last().time);
+
+        ///////////if (timeOffset - initialTime < 200 || finalTime - timeOffset < 200) continue;///////////
+
         DPRINTF(stderr, "%d interval %f\n", i, interval);
         if (interval > 1)
         {

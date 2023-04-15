@@ -296,7 +296,7 @@ void Analysis::doPlots()
         // Highpass the data.
         FreqDomain freqs;
         freqs.load(regData, fftSize);
-        regData = freqs.generateHighPass(rawData.size(), periodSpinbox->value(), 0.666);
+        regData = freqs.generateHighPass(rawData.size(), periodSpinbox->value(), 0.99);////0.666);
 
         regStats = Stats(regData);
         // Plot the normalized data.

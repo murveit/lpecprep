@@ -74,6 +74,7 @@ class PECData
         bool hasWormPosition = false;
         bool wormIncreasing = false;
         double maxWormPosition = -1;
+        QString name;
 
     private:
         QVector<PECSample> data;

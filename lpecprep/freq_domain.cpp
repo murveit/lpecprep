@@ -153,7 +153,7 @@ PECData FreqDomain::generateHighPass(int length, int wormPeriod, double wormFreq
 
     // Zero the low-frequency real & imaginary values.
     const int lowFrequencyBoundary = wormPeriodIndex * wormFrequencyFactor;
-    for (int i = 0; i <= lowFrequencyBoundary; ++i)
+    for (int i = 0; i < lowFrequencyBoundary; ++i)
     {
         newData[i] = 0;
         newData[fftSize - i] = 0;
