@@ -94,7 +94,18 @@ void PECWindow::processInputLine(const QString &line, PECData *pecData)
             else if (cols[1] == "true")
                 v = true;
             else return;
-            pecData->hasWormPosition = v;
+            pecData->wormIncreasing = v;
+            return;
+        }
+        else if (cols[0] == "PECwrapAround")
+        {
+            bool v;
+            if (cols[1] == "false")
+                v = false;
+            else if (cols[1] == "true")
+                v = true;
+            else return;
+            pecData->wormWrapAround = v;
             return;
         }
         else if (cols[0] == "PECmaxPosition")

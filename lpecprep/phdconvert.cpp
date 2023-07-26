@@ -56,14 +56,41 @@ void PhdConvert::convert(const QString &filename)
     ////////////////////////////////////////////////////////
 #endif
 
+#if 0
+    ////////////////////////////////////////////
+    fprintf(stderr, "1st 10, INITIAL RAW DATA (sizeX = %f FL=%f\n", params.sizeX, params.fl);
+    for (int i = 0; i < 10; ++i)
+    {
+        auto sample = data[i];
+        fprintf(stderr, "%3d %10.0f %7.3f %6.3f (%6.3f)\n", i, sample.position, sample.time, sample.signal,
+                sample.signal * params.fl / (206.265 * params.sizeX));
+    }
+    ////////////////////////////////////////////
+#endif
+
     expandData();
+
+#if 0
+    ////////////////////////////////////////////
+    fprintf(stderr, "1st 100, Expanded RAW DATA (sizeX = %f FL=%f\n", params.sizeX, params.fl);
+    for (int i = 0; i < 10; ++i)
+    {
+        auto sample = data[i];
+        fprintf(stderr, "%3d %10.0f %7.3f %6.3f (%6.3f)\n", i, sample.position, sample.time, sample.signal,
+                sample.signal * params.fl / (206.265 * params.sizeX));
+    }
+    ////////////////////////////////////////////
+#endif
+
     data.hasWormPosition = m_hasWormPosition;
     data.wormIncreasing = m_wormIncreasing;
     data.maxWormPosition = m_maxWormPosition;
+    data.wormWrapAround = m_wormWrapAround;
 }
 
 void PhdConvert::setColumnIndeces()
 {
+    mountIndex = colList.indexOf("mount");
     dxIndex = colList.indexOf("dx");
     dyIndex = colList.indexOf("dy");
     raRawIndex = colList.indexOf("RARawDistance");
@@ -92,7 +119,12 @@ void PhdConvert::findWormPositionDirection()
     if (numMissing > 0)
     {
         m_hasWormPosition = false;
-        fprintf(stderr, "Failed, Missing %d worm positions\n", numMissing);
+        fprintf(stderr, "Failed. Missing %d worm positions\n", numMissing);
+    }
+    else if (numInc == 0 && numDec == 0)
+    {
+        m_hasWormPosition = false;
+        fprintf(stderr, "Failed. Never saw worm position increase or decrease\n");
     }
     else
     {
@@ -107,6 +139,7 @@ void PhdConvert::findWormPositionDirection()
             fprintf(stderr, "Failed, Worm positions odd: %d increasing %d decreasing %d identical\n",
                     numInc, numDec, numSame);
         }
+        m_wormWrapAround = (numInc > 0) && (numDec > 0);
     }
     DPRINTF(stderr, "Worm positions: %d increasing %d decreasing, %d the same, %d missing\n", numInc, numDec, numSame,
             numMissing);
@@ -158,8 +191,8 @@ void PhdConvert::expandData()
             // Undersampled, so we must extrapolate samples
             double sinc = (signal - expanded.last().signal) / interval;
             double pinc = (wormPos - expanded.last().position) / interval;
-            DPRINTF(stderr, "WormPos %d: %.2f inc %.2f (last %.2f interval %.2fs)\n",
-                    i, wormPos, pinc, expanded.last().position, interval);
+            DPRINTF(stderr, "WormPos %d: %.0f inc %5.1f (last %.1f interval %5.2fs) || sig %6.2f last %6.2f inc %6.2f\n",
+                    i, wormPos, pinc, expanded.last().position, interval, signal, expanded.last().signal, sinc);
 
             if ((m_wormIncreasing && pinc >= 0) || (!m_wormIncreasing && pinc <= 0))
             {
@@ -239,6 +272,7 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
         // column headings
         colList = line.split(',');
         setColumnIndeces();
+        fprintf(stderr, "mountIndex = %d\n", mountIndex);
     }
     else
     {
@@ -252,6 +286,11 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
             const int index = cols[0].toUInt(&ok);
             if (!ok || index < 0) return;
             ////fprintf(stderr, " Data line\n");
+            if (cols[mountIndex] != "\"Mount\"")
+            {
+                fprintf(stderr, "Skipping line \"%s\"\n", rawLine.toLatin1().data());
+                return;
+            }
             const double timeOffset = cols[1].toDouble(&ok);
             if (!ok) return;
             const double dx = cols[dxIndex].toDouble(&ok);
@@ -274,13 +313,13 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
             if (channel == RA)
             {
                 // RA Error in arcseconds
-                signal = 3.438 * 60 * raDistance / params.fl;
+                signal = 206.265 * raDistance / params.fl;
                 signal = signal / params.dec;
             }
             else
             {
                 // DEC Error in arcseconds
-                signal = 3.438 * 60 * decDistance / params.fl;
+                signal = 206.265 * decDistance / params.fl;
             }
 
             PECSample newData(timeOffset, signal, wormPos);

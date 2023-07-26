@@ -48,6 +48,10 @@ void FreqDomain::load(const PECData &samples, int size)
     for (int i = 0; i < m_sampleSize; ++i)
     {
         double signal = samples[i].signal;
+#if 0
+        double weight = cos((M_PI * i) / m_sampleSize);
+        signal = signal * weight;
+#endif
         // Sum the abs(signal). Used later to scale the generated waveforms.
         m_absSum += fabs(signal);
         *dptr++ = signal;

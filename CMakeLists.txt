@@ -52,6 +52,9 @@ set(LPecPrep_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/phdconvert.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/freq_domain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/stats.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/curvefit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/gslhelpers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lpecprep/robuststatistics.cpp
    )
 
 set(ALL_SRCS
@@ -66,6 +69,7 @@ target_link_libraries(lpecprep
     Qt5::Widgets
     Qt5::Concurrent
     Qt5::PrintSupport    
+    GSL::gsl
     )
 
 set_target_properties(lpecprep PROPERTIES VERSION ${LPecPrep_VERSION_STRING} SOVERSION ${LPecPrep_SOVERSION} OUTPUT_NAME lpecprep)

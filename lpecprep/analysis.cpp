@@ -4,6 +4,9 @@
 #include "stats.h"
 
 #include "ui_analysis.h"
+#include "curvefit.h"
+
+using Ekos::CurveFitting;
 
 namespace
 {
@@ -118,8 +121,9 @@ Analysis::Analysis()
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
-    QString filename("/home/hy/Desktop/SharedFolder/PECdata2/guide_log-2023-03-26T21-01-57.txt");
-    readFile(filename);
+
+    //QString filename("/home/hy/Desktop/SharedFolder/PECdata2/guide_log-2023-03-26T21-01-57.txt");
+    //readFile(filename);
 }
 
 void Analysis::paramsChanged()
@@ -135,19 +139,19 @@ void Analysis::readFile(const QString &filename)
     const double focalLength = QString(focalLengthIn->text()).toDouble();
     const double pixelSize = QString(pixelSizeIn->text()).toDouble();
     const double bin = QString(binIn->text()).toDouble();
+    fprintf(stderr, "NOTE--declination compensation not implemented\n");
     const double dec = 1.0; // Declanation compensation NYI.
     const Params p(focalLength, pixelSize * bin, pixelSize * bin, dec);
 
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
-
     doPlots();
 }
 
 void Analysis::getFileFromUser()
 {
     QUrl inputURL = QFileDialog::getOpenFileUrl(this, "Select input file",
-                    QUrl("file:///home/hy/Desktop/SharedFolder/PECdata2"));
+                    QUrl("file:///home/hy/Desktop/SharedFolder"));
     if (!inputURL.isEmpty())
         readFile(inputURL.toString(QUrl::PreferLocalFile));
 }
@@ -162,6 +166,7 @@ void Analysis::setDefaults()
     trendCB->setChecked(true);
     smoothedCB->setChecked(true);
     linearRegressionCB->setChecked(true);
+    curveFitCB->setChecked(true);
     noiseCB->setChecked(false);
     periodSpinbox->setValue(383);
     harmonicsSpinbox->setValue(5);
@@ -199,7 +204,8 @@ double estimateWormPeriod(const PECData &data)
     FreqDomain freqs;
     freqs.load(temp, fftSize);
     const double wormPeriodEstimate = fftSize / (double) freqs.maxMagnitudeIndex();
-    fprintf(stderr, "Worm period estimate: %.1fs\n", wormPeriodEstimate);
+    fprintf(stderr, "Worm period estimate: %.1fs (fftSize %d, maxMagIndex %d)\n", wormPeriodEstimate, fftSize,
+            freqs.maxMagnitudeIndex());
     return wormPeriodEstimate;
 }
 
@@ -218,6 +224,7 @@ void savePECFile(const QString &filename, const PECData &data, int startPosition
 
     out << QString("PECincreasing,%1\n").arg(data.wormIncreasing ? "true" : "false");
     out << QString("PECmaxPosition,%1\n").arg(data.maxWormPosition);
+    out << QString("PECwrapAround,%1\n").arg(data.wormWrapAround ? "true" : "false");
 
     bool started = false;
     bool ready = false;
@@ -266,6 +273,54 @@ void savePECFile(const QString &filename, const PECData &data, int startPosition
 
 }  // namespace
 
+
+PECData Analysis::fitCurve(const PECData &rawData) const
+{
+    QElapsedTimer timer;
+    timer.start();
+    CurveFitting fitting;
+    QVector<double> position, drift, weights(rawData.size());
+    QVector<bool> outliers(rawData.size(), false);
+    CurveFitting::CurveFit fit = CurveFitting::FOCUS_PARABOLA;
+
+    double minValue = 1e8;
+    for (const PECSample d : rawData.samples())
+    {
+        if (d.signal < minValue)
+            minValue = d.signal;
+    }
+    minValue = minValue - 1.0;
+
+    for (const PECSample d : rawData.samples())
+    {
+        position.push_back(d.time);
+        drift.push_back(d.signal - minValue);
+    }
+
+    fitting.fitCurve(CurveFitting::BEST, position, drift, weights, outliers,
+                     fit, false, CurveFitting::OPTIMISATION_MINIMISE);
+    double R2 = fitting.calculateR2(fit);
+    QVector<double> coefficients;
+    fitting.getCurveParams(fit, coefficients);
+    QString paramStr;
+    for (auto c : coefficients) paramStr.append(QString("%1 ").arg(c));
+    fprintf(stderr, "Calculated curve with R2 = %f minValue %f params %s in %.3fs\n\n",
+            R2, minValue, paramStr.toLatin1().data(), timer.elapsed() / 1000.0);
+
+    PECData output;
+    if (R2 > 0)
+    {
+        for (const PECSample d : rawData.samples())
+        {
+            const double regressed = minValue + fitting.f(d.time);
+            PECSample s(d.time, d.signal - regressed, d.position);
+            output.push_back(s);
+        }
+    }
+    output.copyWormParams(rawData);
+    return output;
+}
+
 void Analysis::doPlots()
 {
     constexpr int fftSize = 64 * 1024;
@@ -278,7 +333,11 @@ void Analysis::doPlots()
     double minY = std::numeric_limits<double>::max(), maxY = std::numeric_limits<double>::lowest();
 
     Stats rawStats(rawData);
-    estimateWormPeriod(rawData);
+
+    if (rawData.wormWrapAround)
+        estimateWormPeriod(rawData);
+    else
+        fprintf(stderr, "Worm doesn't wrap around\n");
 
     if (rawCB->isChecked())
     {
@@ -288,10 +347,18 @@ void Analysis::doPlots()
 
     PECData regData;
     Stats regStats(rawData);
-    if (linearRegressionCB->isChecked())
+    if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
     {
-        // Linear regress the data.
-        regData = regressor.run(rawData);
+        if (curveFitCB->isChecked())
+        {
+            //auto fitData = fitCurve(rawData);
+            regData = fitCurve(rawData);
+        }
+        else
+        {
+            // Linear regress the data.
+            regData = regressor.run(rawData);
+        }
 
         // Highpass the data.
         FreqDomain freqs;
@@ -310,6 +377,10 @@ void Analysis::doPlots()
         regData = rawData;
 
     freqDomain.load(regData, fftSize);
+
+    const double wormPeriodEstimate = fftSize / (double) freqDomain.maxMagnitudeIndex();
+    fprintf(stderr, "FreqDomain period estimate: %d / %d = %.2f\n",
+            fftSize, freqDomain.maxMagnitudeIndex(), wormPeriodEstimate);
 
     plotPeaks(regData, fftSize);
 
@@ -350,7 +421,7 @@ void Analysis::doPlots()
         ////////////////////////////////////////////////////////////////////
 
         QVector<PECData> periodData = separatePecPeriods(regData, pecPeriod);
-        if (linearRegressionCB->isChecked())
+        if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
             plotPeriods(periodData, regStats.minValue(), regStats.maxValue());
         else
             plotPeriods(periodData, rawStats.minValue(), rawStats.maxValue());
@@ -369,7 +440,7 @@ void Analysis::doPlots()
                                   QString("%1").arg(rawStats.rmsError(), 0, 'f', 2)
                                  });
 
-    if (linearRegressionCB->isChecked())
+    if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
     {
         addTableRow(statisticsTable, {"Norm",
                                       QString("%1").arg(-regStats.maxNegError(), 0, 'f', 2),
@@ -616,6 +687,7 @@ void Analysis::initPlots()
     connect(noiseCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(smoothedCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(linearRegressionCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
+    connect(curveFitCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(periodSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
     connect(harmonicsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
 

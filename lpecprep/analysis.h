@@ -40,6 +40,7 @@ class Analysis : public QWidget, public Ui::Analysis
 
         void setupKeyboardShortcuts();
         void peaksMousePress(QMouseEvent *event);
+        PECData fitCurve(const PECData &rawData) const;
 
         PECData rawData, regData, smoothedData, noiseData;
         LinearRegress regressor;

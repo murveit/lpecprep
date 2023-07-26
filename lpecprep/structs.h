@@ -69,11 +69,13 @@ class PECData
             hasWormPosition = pData.hasWormPosition;
             wormIncreasing = pData.wormIncreasing;
             maxWormPosition = pData.maxWormPosition;
+            wormWrapAround = pData.wormWrapAround;
         }
 
         bool hasWormPosition = false;
         bool wormIncreasing = false;
         double maxWormPosition = -1;
+        bool wormWrapAround = false;
         QString name;
 
     private:

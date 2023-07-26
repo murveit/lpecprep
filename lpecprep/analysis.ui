@@ -239,6 +239,22 @@
          </widget>
         </item>
         <item>
+         <widget class="QCheckBox" name="curveFitCB">
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Use Curvefit</string>
+          </property>
+          <property name="text">
+           <string>CurveFit</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <spacer name="horizontalSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -444,8 +460,8 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>250</width>
-            <height>110</height>
+            <width>275</width>
+            <height>150</height>
            </size>
           </property>
           <property name="verticalScrollBarPolicy">
@@ -502,7 +518,7 @@
           </property>
           <property name="maximumSize">
            <size>
-            <width>250</width>
+            <width>275</width>
             <height>16777215</height>
            </size>
           </property>
