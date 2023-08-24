@@ -175,6 +175,7 @@ void Analysis::setDefaults()
 void Analysis::clearPlots()
 {
     clearPlot(pePlot);
+    pePlot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
     clearPlot(overlapPlot);
     clearPlot(peaksPlot);
 }
@@ -321,6 +322,20 @@ PECData Analysis::fitCurve(const PECData &rawData) const
     return output;
 }
 
+void Analysis::notes() const
+{
+    fprintf(stderr, "notes:\n");
+    for (int i = 1; i < smoothedData.size() - 1; ++i)
+    {
+        auto s = smoothedData[i];
+        if (s.signal > smoothedData[i - 1].signal && s.signal > smoothedData[i + 1].signal)
+        {
+            // local maximum
+            fprintf(stderr, "%5d: %s\n", i, smoothedData[i].toString().toLatin1().data());
+        }
+    }
+}
+
 void Analysis::doPlots()
 {
     constexpr int fftSize = 64 * 1024;
@@ -345,7 +360,6 @@ void Analysis::doPlots()
         plotData(rawData, RAW_PLOT);
     }
 
-    PECData regData;
     Stats regStats(rawData);
     if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
     {
@@ -385,7 +399,7 @@ void Analysis::doPlots()
     plotPeaks(regData, fftSize);
 
     QVector<FreqDomain::Harmonics> harmonics;
-    PECData smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
+    smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
     savePECFile("./PECfile", smoothedData, 0, periodSpinbox->value());
     setupTable(peaksTable, 3);
     addTableRow(peaksTable, QVector<QString>({"Harmonics used"}));
@@ -402,6 +416,7 @@ void Analysis::doPlots()
     {
         updateLimits(smoothStats, &minX, &maxX, &minY, &maxY);
         plotData(smoothedData, SMOOTHED_PLOT);
+        notes();
     }
 
     noiseData = getNoiseData(regData, smoothedData);
@@ -674,6 +689,25 @@ void Analysis::finishPlots()
     peaksPlot->replot();
 }
 
+void Analysis::doubleClick(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    pePlot->rescaleAxes();
+    pePlot->replot();
+}
+void Analysis::click(QMouseEvent *event)
+{
+    int index = 0.5 + pePlot->xAxis->pixelToCoord(event->x());
+    if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
+    {
+        if (index < regData.size() && index >= 0)
+        {
+            PECSample sample = regData[index];
+            fprintf(stderr, "%d: %s\n", index, sample.toString().toLatin1().data());
+        }
+    }
+}
+
 void Analysis::initPlots()
 {
     // Note that these don't store the pen (skinny lines) and need to set the pen when drawing.
@@ -692,6 +726,8 @@ void Analysis::initPlots()
     connect(harmonicsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
 
     connect(peaksPlot, &QCustomPlot::mousePress, this, &Analysis::peaksMousePress);
+    connect(pePlot, &QCustomPlot::mouseDoubleClick, this, &Analysis::doubleClick);
+    connect(pePlot, &QCustomPlot::mousePress, this, &Analysis::click);
 
 }
 

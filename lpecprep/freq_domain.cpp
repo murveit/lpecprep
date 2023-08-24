@@ -93,6 +93,13 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
 
     // Zero the real & imaginary values;
     double *newData = new double[fftSize];
+    PECData output;
+    if (newData == nullptr)
+    {
+        fprintf(stderr, "malloc failed!\n");
+        return output;
+    }
+    
     double *dptr = newData;
     for (int i = 0; i < fftSize; ++i)
         *dptr++ = 0.0;
@@ -123,7 +130,6 @@ PECData FreqDomain::generate(int length, int wormPeriod, int numHarmonics, QVect
     const double scale = absSum > 0 ? m_absSum / absSum : 0;
 
     // Copy the filtered data into a PECData
-    PECData output;
     int sampleIndex = 0;
     for (int i = 0; i < length; ++i)
     {

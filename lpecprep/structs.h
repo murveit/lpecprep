@@ -2,6 +2,7 @@
 #define STRUCTS_H
 
 #include <QVector>
+#include <QString>
 
 struct Params
 {
@@ -28,6 +29,13 @@ struct PECSample
     PECSample() : time(0), signal(0), position(0), cycle(0) {}
     //PECSample(double t, double s) : time(t), signal(s), position(0), cycle(0) {}
     PECSample(double t, double s, double p) : time(t), signal(s), position(p), cycle(0) {}
+    QString toString() const {
+        return QString("time %1 val %2 pos %3 (%4)")
+                .arg(time, 6, 'f', 1)
+                .arg(signal, 4, 'f', 2)
+                .arg(position, 0, 'f', 0)
+                .arg(cycle);
+    }
 };
 
 //typedef QVector<PECSample> PECData;

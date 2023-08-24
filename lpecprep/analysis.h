@@ -6,6 +6,8 @@
 #include "linear_regress.h"
 #include "freq_domain.h"
 
+class QMouseEvent;
+
 class Analysis : public QWidget, public Ui::Analysis
 {
         Q_OBJECT
@@ -31,6 +33,9 @@ class Analysis : public QWidget, public Ui::Analysis
         void readFile(const QString &filename);
         void getFileFromUser();
         void paramsChanged();
+        void doubleClick(QMouseEvent *event);
+        void click(QMouseEvent *event);
+        void notes() const;
 
         QVector<PECData> separatePecPeriods(const PECData &data, int period) const;
         QVector<PECData> separatePecPeriodsByWorm(const PECData &data, int startWormPosition) const;
