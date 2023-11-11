@@ -34,7 +34,7 @@ QDateTime getStartTime(const QString &line)
 
 }
 
-PhdConvert::PhdConvert(const QString &filename, const Params &p) : params(p)
+PhdConvert::PhdConvert(const QString &filename)
 {
     convert(filename);
 }
@@ -456,6 +456,12 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
             data.push_back(newData);
         }
     }
+}
+
+double PhdConvert::getArcsecPerPixel() const
+{
+    if (params.fl == 0) return 0;
+    return (params.sizeX * 206.265) / params.fl;
 }
 
 void PhdConvert::resetData(const QDateTime &start)

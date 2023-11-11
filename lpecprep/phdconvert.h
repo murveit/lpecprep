@@ -12,11 +12,12 @@ class PhdConvert : public QObject
         Q_OBJECT
 
     public:
-        PhdConvert(const QString &filename, const Params &p);
+        PhdConvert(const QString &filename);
         ~PhdConvert();
 
         const PECData &getData() const { return data; }
         const Params &getParams() const { return params; }
+        double getArcsecPerPixel() const;
 
     public slots:
 

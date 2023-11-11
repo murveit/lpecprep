@@ -109,8 +109,8 @@ void plotPeaks(const PECData &samples, int fftSize)
 int main(int argc, char *argv[])
 {
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
-    const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
-    PhdConvert phd2(filename, p);
+    const QString filename("");
+    PhdConvert phd2(filename);
     PECData rawData = phd2.getData();
 
     LinearRegress regressor;

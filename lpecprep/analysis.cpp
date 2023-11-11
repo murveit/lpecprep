@@ -158,23 +158,11 @@ Analysis::Analysis()
     setDefaults();
     setupKeyboardShortcuts();
 
-    binIn->setText("2");
-    binIn->setValidator( new QIntValidator(1, 10, this) );
-    focalLengthIn->setText("2000");
-    focalLengthIn->setValidator( new QIntValidator(1, 10000, this) );
-    pixelSizeIn->setText("3.80");
-    pixelSizeIn->setValidator( new QDoubleValidator(0.1, 50.0, 2, this) );
-    connect(binIn, &QLineEdit::textEdited, this, &Analysis::paramsChanged);
+    focalLengthBox->setText("");
+    asppBox->setText("");
 
     connect(newFileButton, &QPushButton::pressed, this, &Analysis::getFileFromUser);
     connect(saveFileButton, &QPushButton::pressed, this, &Analysis::saveFile);
-
-    //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
-    //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
-    //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_no_pec.txt");
-
-    //QString filename("/home/hy/Desktop/SharedFolder/PECdata2/guide_log-2023-03-26T21-01-57.txt");
-    //readFile(filename);
 }
 
 void Analysis::paramsChanged()
@@ -187,19 +175,12 @@ void Analysis::readFile(const QString &filename)
 {
     filenameLabel->setText(filename);
 
-    const double focalLength = QString(focalLengthIn->text()).toDouble();
-    const double pixelSize = QString(pixelSizeIn->text()).toDouble();
-    const double bin = QString(binIn->text()).toDouble();
-    const double dec = 1.0; // Declanation compensation starts out unused, but could be in guide file.
-    const Params p(focalLength, pixelSize * bin, pixelSize * bin, dec);
-
-    PhdConvert phd2(filename, p);
+    PhdConvert phd2(filename);
     rawData = phd2.getData();
     if (rawData.size() == 0)
         return;
-    focalLengthIn->setText(QString("%1").arg(phd2.getParams().fl, 0, 'f', 0));
-    pixelSizeIn->setText(QString("%1").arg(phd2.getParams().sizeX, 0, 'f', 2));
-    binIn->setText("1");
+    focalLengthBox->setText(QString("%1mm").arg(phd2.getParams().fl, 0, 'f', 0));
+    asppBox->setText(QString("%1").arg(phd2.getArcsecPerPixel(), 0, 'f', 2));
     doPlots();
 }
 

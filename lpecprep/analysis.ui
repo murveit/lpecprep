@@ -289,10 +289,10 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Pixel size in microns</string>
+           <string>Guiding image resolution in arcsec-per-pixel</string>
           </property>
           <property name="text">
-           <string>Pixel Size:</string>
+           <string>a-s/px:</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -300,10 +300,10 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="pixelSizeIn">
+         <widget class="QLabel" name="asppBox">
           <property name="minimumSize">
            <size>
-            <width>0</width>
+            <width>50</width>
             <height>0</height>
            </size>
           </property>
@@ -314,10 +314,10 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Pixel size in microns</string>
+           <string>guiding image resolution in arcsec-per-pixel</string>
           </property>
           <property name="text">
-           <string>3.80</string>
+           <string></string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -344,7 +344,13 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="focalLengthIn">
+         <widget class="QLabel" name="focalLengthBox">
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
           <property name="maximumSize">
            <size>
             <width>40</width>
@@ -356,44 +362,6 @@
           </property>
           <property name="text">
            <string>2000</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="binLabel">
-          <property name="maximumSize">
-           <size>
-            <width>30</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Pixel binning</string>
-          </property>
-          <property name="text">
-           <string>Bin:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="binIn">
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Pixel binning</string>
-          </property>
-          <property name="text">
-           <string>2</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
