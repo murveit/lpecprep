@@ -101,8 +101,7 @@ int scanFile(const QString &filename)
 
     if (durations.size() != starts.size())
     {
-        QMessageBox::question(nullptr, "LPecPrep", "Bad File",
-                              QMessageBox::Ok, QMessageBox::Ok ) ;
+        QMessageBox::warning(nullptr, "LPecPrep", "Bad File", "");
         return -1;
     }
 

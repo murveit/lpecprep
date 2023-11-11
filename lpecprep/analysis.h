@@ -32,6 +32,7 @@ class Analysis : public QWidget, public Ui::Analysis
         void doPlots();
         void readFile(const QString &filename);
         void getFileFromUser();
+        void saveFile();
         void paramsChanged();
         void doubleClick(QMouseEvent *event);
         void click(QMouseEvent *event);

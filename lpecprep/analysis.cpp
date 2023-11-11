@@ -98,6 +98,56 @@ void updateLimits(const Stats &stats, double *minX, double *maxX, double *minY, 
     *maxX = std::max(*maxX, stats.maxTime());
     *minX = std::min(*minX, stats.minTime());
 }
+
+void savePECFile(const QString &filename, const PECData &data, double duration)
+{
+    // For now, always starting near worm position 0.
+
+    if (!data.hasWormPosition)
+    {
+        fprintf(stderr, "Can't save PEC file. No worm position\n");
+        return;
+    }
+    if (data.size() < 5)
+    {
+        fprintf(stderr, "Can't save PEC file. Data file not large enough.\n");
+        return;
+    }
+    QFile pecFile;
+    pecFile.setFileName(filename);
+    pecFile.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&pecFile);
+
+    out << QString("PECincreasing,%1\n").arg(data.wormIncreasing ? "true" : "false");
+    out << QString("PECmaxPosition,%1\n").arg(data.maxWormPosition);
+    out << QString("PECwrapAround,%1\n").arg(data.wormWrapAround ? "true" : "false");
+
+    bool started = false;
+    double startTime = -1;
+    for (int i = 0; i < data.size(); ++i)
+    {
+        const auto &s = data.samples()[i];
+
+        // Finish if we've output enough.
+        if (started && (s.time - startTime > duration + 0.5))
+            break;
+
+        if (!started && i > 0 && ((data.wormIncreasing && s.position < data.samples()[i - 1].position) ||
+                                  (!data.wormIncreasing && s.position > data.samples()[i - 1].position)))
+        {
+            startTime = s.time;
+            started = true;
+        }
+
+        // Skip this sample if not ready to start.
+        if (!started)
+            continue;
+
+        out << QString("%1,%2\n").arg(s.position).arg(s.signal);
+    }
+    out.flush();
+    fprintf(stderr, "Wrote %s\n", filename.toLatin1().data());
+}
 }
 
 
@@ -117,6 +167,7 @@ Analysis::Analysis()
     connect(binIn, &QLineEdit::textEdited, this, &Analysis::paramsChanged);
 
     connect(newFileButton, &QPushButton::pressed, this, &Analysis::getFileFromUser);
+    connect(saveFileButton, &QPushButton::pressed, this, &Analysis::saveFile);
 
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log-2022-12-01T20-04-59.txt");
     //const QString filename("/home/hy/Desktop/SharedFolder/GUIDE_DATA/DATA2/guide_log_pec.txt");
@@ -152,12 +203,23 @@ void Analysis::readFile(const QString &filename)
     doPlots();
 }
 
+void Analysis::saveFile()
+{
+    if (smoothedData.size() == 0)
+    {
+        QMessageBox::warning(nullptr, "LPecPrep", "Nothing to save", "") ;
+        return;
+    }
+    QString outputFilename = QFileDialog::getSaveFileName(this, "Select output filename");
+    if (outputFilename.size() > 0)
+        savePECFile(outputFilename, smoothedData, periodSpinbox->value());
+}
+
 void Analysis::getFileFromUser()
 {
     if (periodSpinbox->value() == 0)
     {
-        QMessageBox::question(this, tr("LPecPrep"), tr("Please fill in the worm period"),
-                              QMessageBox::Ok, QMessageBox::Ok ) ;
+        QMessageBox::warning(this, tr("LPecPrep"), tr("Please fill in the worm period"), "");
         return;
     }
 
@@ -219,56 +281,6 @@ double estimateWormPeriod(const PECData &data)
     fprintf(stderr, "Worm period estimate: %.1fs (fftSize %d, maxMagIndex %d)\n", wormPeriodEstimate, fftSize,
             freqs.maxMagnitudeIndex());
     return wormPeriodEstimate;
-}
-
-void savePECFile(const QString &filename, const PECData &data, double duration)
-{
-    // For now, always starting near worm position 0.
-
-    if (!data.hasWormPosition)
-    {
-        fprintf(stderr, "Can't save PEC file. No worm position\n");
-        return;
-    }
-    if (data.size() < 5)
-    {
-        fprintf(stderr, "Can't save PEC file. Data file not large enough.\n");
-        return;
-    }
-    QFile pecFile;
-    pecFile.setFileName(filename);
-    pecFile.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&pecFile);
-
-    out << QString("PECincreasing,%1\n").arg(data.wormIncreasing ? "true" : "false");
-    out << QString("PECmaxPosition,%1\n").arg(data.maxWormPosition);
-    out << QString("PECwrapAround,%1\n").arg(data.wormWrapAround ? "true" : "false");
-
-    bool started = false;
-    double startTime = -1;
-    for (int i = 0; i < data.size(); ++i)
-    {
-        const auto &s = data.samples()[i];
-
-        // Finish if we've output enough.
-        if (started && (s.time - startTime > duration + 0.5))
-            break;
-
-        if (!started && i > 0 && ((data.wormIncreasing && s.position < data.samples()[i - 1].position) ||
-                                  (!data.wormIncreasing && s.position > data.samples()[i - 1].position)))
-        {
-            startTime = s.time;
-            started = true;
-        }
-
-        // Skip this sample if not ready to start.
-        if (!started)
-            continue;
-
-        out << QString("%1,%2\n").arg(s.position).arg(s.signal);
-    }
-    out.flush();
-    fprintf(stderr, "Wrote %s\n", filename.toLatin1().data());
 }
 
 }  // namespace
@@ -399,7 +411,6 @@ void Analysis::doPlots()
 
     QVector<FreqDomain::Harmonics> harmonics;
     smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
-    savePECFile("./PECfile", smoothedData, periodSpinbox->value());
     setupTable(peaksTable, 3);
     addTableRow(peaksTable, QVector<QString>({"Harmonics used"}));
     addTableRow(peaksTable, {"Period", "Mag", "Phase"});
