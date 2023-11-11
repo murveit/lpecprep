@@ -5,6 +5,7 @@
 #include <QInputDialog>
 #include <QDir>
 #include <QMessageBox>
+#include "math.h"
 
 #define DPRINTF if (false) fprintf
 
@@ -69,7 +70,6 @@ int scanFile(const QString &filename)
                 {
                     // end the session
                     double durationSecs = currentStart.secsTo(now);
-                    fprintf(stderr, "Got Sdur %f\n", durationSecs);
                     durations.append(durationSecs);
                     inSession = false;
                 }
@@ -373,16 +373,16 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
         params.fl = focalLen;
         params.sizeX = scale * focalLen / 206.265;
         params.sizeY = params.sizeX;
-        fprintf(stderr, "Found parameters: scale %f bin %d FL %f, using sizeX/Y %f\n",
-                scale, bin, focalLen, params.sizeX);
+        //fprintf(stderr, "Found parameters: scale %f bin %d FL %f, using sizeX/Y %f\n",
+        //        scale, bin, focalLen, params.sizeX);
 
     }
     if (positionRe.indexIn(line) != -1)
     {
         double RA = positionRe.cap(1).toDouble();
         double DEC = positionRe.cap(2).toDouble();
-        fprintf(stderr, "Found RA/DEC %f %f\n", RA, DEC);
-        params.dec = DEC;
+        //fprintf(stderr, "Found RA/DEC %f %f -- NOT USING IT!!!!\n", RA, DEC);
+        params.dec = cos(DEC * 3.14 / 180.0);
     }
 
     if (line.contains("Guiding Begins"))
@@ -446,7 +446,6 @@ void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
                 // RA Error in arcseconds
                 signal = 206.265 * raDistance / params.fl;
                 signal = signal / params.dec;
-                fprintf(stderr, "Used  size %f fl %f\n", params.sizeX, params.fl);
             }
             else
             {

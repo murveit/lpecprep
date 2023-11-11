@@ -139,8 +139,7 @@ void Analysis::readFile(const QString &filename)
     const double focalLength = QString(focalLengthIn->text()).toDouble();
     const double pixelSize = QString(pixelSizeIn->text()).toDouble();
     const double bin = QString(binIn->text()).toDouble();
-    fprintf(stderr, "NOTE--declination compensation not implemented\n");
-    const double dec = 1.0; // Declanation compensation NYI.
+    const double dec = 1.0; // Declanation compensation starts out unused, but could be in guide file.
     const Params p(focalLength, pixelSize * bin, pixelSize * bin, dec);
 
     PhdConvert phd2(filename, p);
