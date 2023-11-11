@@ -210,14 +210,20 @@ double estimateWormPeriod(const PECData &data)
     return wormPeriodEstimate;
 }
 
-void savePECFile(const QString &filename, const PECData &data, int startPosition, double duration)
+void savePECFile(const QString &filename, const PECData &data, double duration)
 {
+    // For now, always starting near worm position 0.
+
     if (!data.hasWormPosition)
     {
         fprintf(stderr, "Can't save PEC file. No worm position\n");
         return;
     }
-
+    if (data.size() < 5)
+    {
+        fprintf(stderr, "Can't save PEC file. Data file not large enough.\n");
+        return;
+    }
     QFile pecFile;
     pecFile.setFileName(filename);
     pecFile.open(QIODevice::WriteOnly | QIODevice::Text);
@@ -228,7 +234,6 @@ void savePECFile(const QString &filename, const PECData &data, int startPosition
     out << QString("PECwrapAround,%1\n").arg(data.wormWrapAround ? "true" : "false");
 
     bool started = false;
-    bool ready = false;
     double startTime = -1;
     for (int i = 0; i < data.size(); ++i)
     {
@@ -238,25 +243,8 @@ void savePECFile(const QString &filename, const PECData &data, int startPosition
         if (started && (s.time - startTime > duration + 0.5))
             break;
 
-        // Start if we happen to hit the start position.
-        if (!started && fabs((double)startPosition - s.position) <= 0.5)
-        {
-            startTime = s.time;
-            started = true;
-        }
-
-        // Can't just check to see if > start position, since may wrap around.
-        // Must first be < start position before checking for > start position.
-        if (!started && (( data.wormIncreasing && s.position < startPosition) ||
-                         (!data.wormIncreasing && s.position > startPosition)))
-        {
-            ready = true;
-            continue;
-        }
-
-        // Finally check if we've passed the start position.
-        if (!started && ready && (( data.wormIncreasing && s.position >= startPosition) ||
-                                  (!data.wormIncreasing && s.position <= startPosition)))
+        if (!started && i > 0 && ((data.wormIncreasing && s.position < data.samples()[i - 1].position) ||
+                                  (!data.wormIncreasing && s.position > data.samples()[i - 1].position)))
         {
             startTime = s.time;
             started = true;
@@ -400,7 +388,7 @@ void Analysis::doPlots()
 
     QVector<FreqDomain::Harmonics> harmonics;
     smoothedData = freqDomain.generate(regData.size(), periodSpinbox->value(), harmonicsSpinbox->value(), &harmonics);
-    savePECFile("./PECfile", smoothedData, 0, periodSpinbox->value());
+    savePECFile("./PECfile", smoothedData, periodSpinbox->value());
     setupTable(peaksTable, 3);
     addTableRow(peaksTable, QVector<QString>({"Harmonics used"}));
     addTableRow(peaksTable, {"Period", "Mag", "Phase"});

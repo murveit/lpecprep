@@ -142,13 +142,14 @@ int initPlot(QCustomPlot *plot, const QString &name)
     return num;
 }
 
-// For now, we always start the plot at 1.0
 void PECWindow::plotData(const PECData &data, int plot)
 {
     if (data.size() == 0) return;
 
     const double initialPosition = data[0].signal;
-    const double offset = initialPosition - 1.00;
+    // For now, we always start the plot at 1.0 -- removed!
+    //const double offset = initialPosition - 1.00;
+    const double offset = 0;
     fprintf(stderr, "Plotting PEC starting at 1, so removing offset %.1f\n", offset);
     auto rawPlot = PECPlot->graph(plot);
     for (int i = 0; i < data.size(); i++)
@@ -165,7 +166,7 @@ void PECWindow::doPlots()
         int gNum = initPlot(PECPlot, name);
         plotData(m_pecData[i], gNum);
     }
-    PECPlot->xAxis->setRange(0, 1000);
+    PECPlot->xAxis->rescale();
     PECPlot->yAxis->setRange(-2, +2);
 
     // Setup the legend
@@ -179,6 +180,10 @@ void PECWindow::doPlots()
     // Rows pretty tightly packed.
     ////PECPlot->legend->setRowSpacing(-3);
     PECPlot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignLeft | Qt::AlignTop);
+
+    PECPlot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
+    PECPlot->axisRect()->setRangeZoom(Qt::Vertical);
+    PECPlot->axisRect()->setRangeDrag(Qt::Vertical);
 
     PECPlot->replot();
 }
