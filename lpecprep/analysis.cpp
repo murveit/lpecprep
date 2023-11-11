@@ -145,11 +145,23 @@ void Analysis::readFile(const QString &filename)
 
     PhdConvert phd2(filename, p);
     rawData = phd2.getData();
+    if (rawData.size() == 0)
+        return;
+    focalLengthIn->setText(QString("%1").arg(phd2.getParams().fl, 0, 'f', 0));
+    pixelSizeIn->setText(QString("%1").arg(phd2.getParams().sizeX, 0, 'f', 2));
+    binIn->setText("1");
     doPlots();
 }
 
 void Analysis::getFileFromUser()
 {
+    if (periodSpinbox->value() == 0)
+    {
+        QMessageBox::question(this, tr("LPecPrep"), tr("Please fill in the worm period"),
+                              QMessageBox::Ok, QMessageBox::Ok ) ;
+        return;
+    }
+
     QUrl inputURL = QFileDialog::getOpenFileUrl(this, "Select input file",
                     QUrl("file:///home/hy/Desktop/SharedFolder"));
     if (!inputURL.isEmpty())
@@ -168,7 +180,7 @@ void Analysis::setDefaults()
     linearRegressionCB->setChecked(true);
     curveFitCB->setChecked(true);
     noiseCB->setChecked(false);
-    periodSpinbox->setValue(383);
+    periodSpinbox->setValue(0);
     harmonicsSpinbox->setValue(5);
 }
 

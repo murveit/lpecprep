@@ -418,7 +418,7 @@
            <string>Mount's worm gear period in seconds</string>
           </property>
           <property name="minimum">
-           <number>2</number>
+           <number>0</number>
           </property>
           <property name="maximum">
            <number>10000</number>

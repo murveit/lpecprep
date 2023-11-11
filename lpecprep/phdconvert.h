@@ -16,6 +16,7 @@ class PhdConvert : public QObject
         ~PhdConvert();
 
         const PECData &getData() const { return data; }
+        const Params &getParams() const { return params; }
 
     public slots:
 
@@ -46,7 +47,7 @@ class PhdConvert : public QObject
         // It just extracts one sequence (the final one) from the file.
         PECData data;
 
-        const Params params;
+        Params params;
 
 };
 
