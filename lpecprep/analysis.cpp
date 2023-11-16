@@ -1,4 +1,6 @@
 #include <QKeySequence>
+#include <QtConcurrent>
+
 #include "analysis.h"
 #include "phdconvert.h"
 #include "stats.h"
@@ -163,6 +165,7 @@ Analysis::Analysis()
 
     connect(newFileButton, &QPushButton::pressed, this, &Analysis::getFileFromUser);
     connect(saveFileButton, &QPushButton::pressed, this, &Analysis::saveFile);
+    loadFileDir.setPath(QDir::homePath());
 }
 
 void Analysis::paramsChanged()
@@ -205,9 +208,12 @@ void Analysis::getFileFromUser()
     }
 
     QUrl inputURL = QFileDialog::getOpenFileUrl(this, "Select input file",
-                    QUrl("file:///home/hy/Desktop/SharedFolder"));
+                    QUrl::fromUserInput(loadFileDir.absolutePath()));
     if (!inputURL.isEmpty())
+    {
+        loadFileDir = QFileInfo(inputURL.path()).absoluteDir();
         readFile(inputURL.toString(QUrl::PreferLocalFile));
+    }
 }
 
 Analysis::~Analysis()
@@ -336,6 +342,7 @@ void Analysis::doPlots()
     if (rawData.empty())
         return;
 
+    QApplication::setOverrideCursor(Qt::WaitCursor);
     double minX = std::numeric_limits<double>::max(), maxX = std::numeric_limits<double>::lowest();
     double minY = std::numeric_limits<double>::max(), maxY = std::numeric_limits<double>::lowest();
 
@@ -355,12 +362,35 @@ void Analysis::doPlots()
     Stats regStats(rawData);
     if (linearRegressionCB->isChecked() || curveFitCB->isChecked())
     {
+        bool fittingDone = false;
+
         if (curveFitCB->isChecked())
         {
-            //auto fitData = fitCurve(rawData);
-            regData = fitCurve(rawData);
+            // All this is done so that I can timeout if fitCurve takes too long.
+            // Without that it could have been: regData = fitCurve(rawData);
+
+            constexpr int timeoutMsec = 10000;
+            QEventLoop loop;
+            QFutureWatcher<PECData> watcher;
+            QObject::connect( &watcher, SIGNAL(finished()), &loop, SLOT(quit()));
+            QTimer::singleShot(timeoutMsec, &loop, SLOT(quit()) );
+
+            QFuture<PECData> future = QtConcurrent::run(this, &Analysis::fitCurve, rawData);
+            watcher.setFuture(future);
+            loop.exec();
+
+            if ( future.isFinished() )
+            {
+                regData = future.result();
+                fittingDone = true;
+            }
+            else
+            {
+                // Solver timed out. Will run linear regression below.
+                future.cancel();
+            }
         }
-        else
+        if (!fittingDone)
         {
             // Linear regress the data.
             regData = regressor.run(rawData);
@@ -465,6 +495,7 @@ void Analysis::doPlots()
                                   QString("%1").arg(residualStats.maxPosError(), 0, 'f', 2),
                                   QString("%1").arg(residualStats.rmsError(), 0, 'f', 2)
                                  });
+    QApplication::setOverrideCursor(Qt::ArrowCursor);
     finishPlots();
 }
 

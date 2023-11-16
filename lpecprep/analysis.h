@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "linear_regress.h"
 #include "freq_domain.h"
+#include <QDir>
 
 class QMouseEvent;
 
@@ -59,6 +60,7 @@ class Analysis : public QWidget, public Ui::Analysis
         int SMOOTHED_PLOT = 3;
 
         QCPGraph::LineStyle peaksLineType = QCPGraph::lsLine;
+        QDir loadFileDir;
 
 };
 
