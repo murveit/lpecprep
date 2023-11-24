@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 {
     Params p(2000.0, 2 * 3.8, 2 * 3.8, 1.0);
     const QString filename("");
-    PhdConvert phd2(filename);
+    PhdConvert phd2;
     PECData rawData = phd2.getData();
 
     LinearRegress regressor;

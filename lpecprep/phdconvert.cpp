@@ -11,40 +11,52 @@
 
 namespace
 {
+    // Guiding Begins at 2023-11-10 18:02:34
+    QRegExp startRe("^Guiding\\s+Begins\\s+at\\s+(\\S+)\\s+(\\S+)");
 
-// Guiding Begins at 2023-11-10 18:02:34
-QRegExp startRe("^Guiding\\s+Begins\\s+at\\s+(\\S+)\\s+(\\S+)");
+    // Guiding Ends at 2023-11-10 18:11:57
+    QRegExp endRe("^Guiding\\s+Ends\\s+at\\s+(\\S+)\\s+(\\S+)");
 
-// Guiding Ends at 2023-11-10 18:11:57
-QRegExp endRe("^Guiding\\s+Ends\\s+at\\s+(\\S+)\\s+(\\S+)");
+    //Pixel scale = 3.41 arc-sec/px, Binning = 1, Focal length = 227 mm
+    QRegExp paramRe("^Pixel\\s+scale\\s+=\\s+([\\d.]+)\\s+arc-sec/px,\\s+Binning\\s+=\\s+(\\d+),\\s+Focal\\s+length\\s+=\\s+([\\d.]+)\\s+mm");
 
-//Pixel scale = 3.41 arc-sec/px, Binning = 1, Focal length = 227 mm
-QRegExp paramRe("^Pixel\\s+scale\\s+=\\s+([\\d.]+)\\s+arc-sec/px,\\s+Binning\\s+=\\s+(\\d+),\\s+Focal\\s+length\\s+=\\s+([\\d.]+)\\s+mm");
-
-// RA = 18.56 hr, Dec = 20.7 deg, Hour angle = N/A hr, Pier side = East, Rotator pos = N/A, Alt = 45.3 deg, Az = 242.5 deg
-QRegExp positionRe("^RA\\s+=\\s+([\\d.]+)\\s+hr,\\s+Dec\\s+=\\s+([\\d.]+)\\s+deg,.*");
+    // RA = 18.56 hr, Dec = 20.7 deg, Hour angle = N/A hr, Pier side = East, Rotator pos = N/A, Alt = 45.3 deg, Az = 242.5 deg
+    QRegExp positionRe("^RA\\s+=\\s+([\\d.]+)\\s+hr,\\s+Dec\\s+=\\s+([\\d.]+)\\s+deg,.*");
 
 
-QDateTime getStartTime(const QString &line)
-{
-    const QString timePart = line.mid(18);
-    QDateTime b = QDateTime::fromString(timePart, Qt::ISODate);
-    return b;
+    QDateTime getStartTime(const QString &line)
+    {
+        const QString timePart = line.mid(18);
+        QDateTime b = QDateTime::fromString(timePart, Qt::ISODate);
+        return b;
+    }
 }
 
-}
-
-PhdConvert::PhdConvert(const QString &filename)
+PhdConvert::PhdConvert()
 {
-    convert(filename);
 }
 
 PhdConvert::~PhdConvert()
 {
 }
 
-int scanFile(const QString &filename)
+//builds a string list of sessions found in the log file - David Bennett
+void PhdConvert::setSessions(QStringList starts, QVector<double> durations)
 {
+    sessions.clear();
+
+    for (int i = 0; i < starts.size(); ++i)
+    {
+        QString dString = durations[i] <= 0 ? "???" : QString("%1").arg(durations[i] / 60.0, 0, 'f', 1);
+        QString item = QString("%1 (%2 minutes)").arg(starts[i]).arg(dString);
+        this->sessions.append(item);
+    }
+}
+
+//scans a log file looking for sessions with limited checks for data quality - David Bennett
+void PhdConvert::scanFile(const QString &filename)
+{
+    resetAllData();
     QFile inputFile(filename);
     QStringList starts;
     QVector<double> durations;
@@ -101,33 +113,23 @@ int scanFile(const QString &filename)
 
     if (durations.size() != starts.size())
     {
-        QMessageBox::warning(nullptr, "LPecPrep", "Bad File", "");
-        return -1;
+        QMessageBox::warning(nullptr, "LPecPrep", "Bad log file", "");
+        scanLogSuccess = false;
     }
 
-    QStringList choices;
-    for (int i = 0; i < starts.size(); ++i)
+    if (durations.size() == 0)
     {
-        QString dString = durations[i] <= 0 ? "???" : QString("%1").arg(durations[i] / 60.0, 0, 'f', 1);
-        QString item = QString("%1 (%2 minutes)").arg(starts[i]).arg(dString);
-        choices.append(item);
+        QMessageBox::warning(nullptr, "LPecPrep", "No Sessions found in log file", "");
+        scanLogSuccess = false;
     }
-    bool ok;
-    auto item = QInputDialog::getItem(nullptr, "Get Session",
-                                      "choose the guiding session:",
-                                      choices, 0, false, &ok);
-    if (!ok) return -1;
-    for (int i = 0; i < choices.size(); ++i)
-        if (choices[i] == item)
-            return i;
-    return -1;
+
+    setSessions(starts, durations);
+    scanLogSuccess = true;
 }
 
-void PhdConvert::convert(const QString &filename)
+//examines lines for a guiding session and captures raw data
+void PhdConvert::convert(const QString &filename, int sessionIndex)
 {
-    const int sessionIndex = scanFile(filename);
-    if (sessionIndex < 0)
-        return;
     int currentSessionIndex = -1;
 
     QFile inputFile(filename);
@@ -359,6 +361,7 @@ void PhdConvert::expandData()
     data = expanded;
 }
 
+
 void PhdConvert::processInputLine(const QString &rawLine, RaDec channel)
 {
     QString line = rawLine.trimmed();
@@ -472,4 +475,12 @@ void PhdConvert::resetData(const QDateTime &start)
         fprintf(stderr, "Time not valid!\n");
     fprintf(stderr, "Resetting start: %s\n", startTime.toString().toLatin1().data());
     startTime = start;
+}
+
+//clears any previously recorded data called at the start of a new scan - David Bennett
+void PhdConvert::resetAllData()
+{
+    data.clear();
+    params.dec=0;params.fl=0;params.sizeX=0.0;params.sizeY=0.0;
+    sessions.clear();
 }

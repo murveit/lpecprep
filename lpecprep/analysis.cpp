@@ -168,23 +168,17 @@ Analysis::Analysis()
     loadFileDir.setPath(QDir::homePath());
 }
 
-void Analysis::paramsChanged()
+//Checks the selected file and if good, adds the guiding sessions to the combo box - David Bennett 22/11/2023
+void Analysis::checkFile(const QString &filename)
 {
-    if (!filenameLabel->text().isEmpty())
-        readFile(filenameLabel->text());
-}
+    clearAll();
 
-void Analysis::readFile(const QString &filename)
-{
-    filenameLabel->setText(filename);
-
-    PhdConvert phd2(filename);
-    rawData = phd2.getData();
-    if (rawData.size() == 0)
+    phd2.scanFile(filename);
+    if (! phd2.scanSuccess())
         return;
-    focalLengthBox->setText(QString("%1mm").arg(phd2.getParams().fl, 0, 'f', 0));
-    asppBox->setText(QString("%1").arg(phd2.getArcsecPerPixel(), 0, 'f', 2));
-    doPlots();
+
+    filenameLabel->setText(filename);
+    sessionsComboBox->addItems(phd2.getSessions());
 }
 
 void Analysis::saveFile()
@@ -212,7 +206,7 @@ void Analysis::getFileFromUser()
     if (!inputURL.isEmpty())
     {
         loadFileDir = QFileInfo(inputURL.path()).absoluteDir();
-        readFile(inputURL.toString(QUrl::PreferLocalFile));
+        checkFile(inputURL.toString(QUrl::PreferLocalFile));
     }
 }
 
@@ -226,6 +220,7 @@ void Analysis::setDefaults()
     trendCB->setChecked(true);
     smoothedCB->setChecked(true);
     linearRegressionCB->setChecked(true);
+    invertCB->setChecked(false);
     curveFitCB->setChecked(true);
     noiseCB->setChecked(false);
     periodSpinbox->setValue(0);
@@ -238,6 +233,16 @@ void Analysis::clearPlots()
     pePlot->setInteractions(QCP::iRangeZoom | QCP::iRangeDrag);
     clearPlot(overlapPlot);
     clearPlot(peaksPlot);
+}
+
+//Clears dialog widgets before scanning a new file - David Bennett 22/11/2023
+void Analysis::clearAll()
+{
+   sessionsComboBox->clear();
+   filenameLabel->clear();
+   focalLengthBox->clear();
+   asppBox->clear();
+   clearPlots();
 }
 
 namespace
@@ -336,6 +341,9 @@ void Analysis::notes() const
 
 void Analysis::doPlots()
 {
+    //inverts raw data if necessary if checkbox set - David Bennett 22/11/2023
+    rawData.invertSignal(invertCB->checkState());
+
     constexpr int fftSize = 64 * 1024;
     clearPlots();
 
@@ -730,6 +738,23 @@ void Analysis::click(QMouseEvent *event)
     }
 }
 
+//Fired when a session is selected from combo box list - David Bennett 22/11/2023
+void Analysis::indexChanged(int index)
+{
+    //Run convert to get raw data for selected session
+    phd2.convert(filenameLabel->text(), index);
+
+    focalLengthBox->setText(QString("%1mm").arg(phd2.getParams().fl, 0, 'f', 0));
+    asppBox->setText(QString("%1").arg(phd2.getArcsecPerPixel(), 0, 'f', 2));
+
+    rawData = phd2.getData();
+
+    if (rawData.size() == 0)
+        return;
+
+    doPlots();
+}
+
 void Analysis::initPlots()
 {
     // Note that these don't store the pen (skinny lines) and need to set the pen when drawing.
@@ -744,12 +769,14 @@ void Analysis::initPlots()
     connect(smoothedCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(linearRegressionCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(curveFitCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
+    connect(invertCB, &QCheckBox::stateChanged, this, &Analysis::doPlots);
     connect(periodSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
     connect(harmonicsSpinbox, QOverload<int>::of(&QSpinBox::valueChanged), this, &Analysis::doPlots);
 
     connect(peaksPlot, &QCustomPlot::mousePress, this, &Analysis::peaksMousePress);
     connect(pePlot, &QCustomPlot::mouseDoubleClick, this, &Analysis::doubleClick);
     connect(pePlot, &QCustomPlot::mousePress, this, &Analysis::click);
+    connect(sessionsComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(indexChanged(int)));
 
 }
 

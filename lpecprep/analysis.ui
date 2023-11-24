@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>980</width>
-    <height>906</height>
+    <width>1000</width>
+    <height>720</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="AnalysisLayout">
@@ -58,14 +58,29 @@
          </property>
          <item>
           <widget class="QPushButton" name="newFileButton">
+           <property name="minimumSize">
+            <size>
+             <width>80</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>65</width>
              <height>16777215</height>
             </size>
            </property>
+           <property name="toolTip">
+            <string>Select the Guide log to analyse</string>
+           </property>
            <property name="text">
-            <string>New File</string>
+            <string>Guide Log</string>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>20</width>
+             <height>16</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -77,11 +92,19 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="baseSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="font">
             <font>
-             <weight>75</weight>
              <bold>true</bold>
             </font>
+           </property>
+           <property name="toolTip">
+            <string>full filename of Log file</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::StyledPanel</enum>
@@ -101,15 +124,43 @@
           </widget>
          </item>
          <item>
+          <widget class="QComboBox" name="sessionsComboBox">
+           <property name="toolTip">
+            <string>Guide Sessions found in the log file</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="saveFileButton">
+           <property name="minimumSize">
+            <size>
+             <width>100</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="maximumSize">
             <size>
              <width>65</width>
              <height>16777215</height>
             </size>
            </property>
+           <property name="baseSize">
+            <size>
+             <width>80</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Create a PEC file</string>
+           </property>
            <property name="text">
-            <string>Save File</string>
+            <string>Save PEC File</string>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>25</width>
+             <height>16</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -172,241 +223,368 @@
       <item>
        <layout class="QHBoxLayout" name="Checkboxes">
         <item>
-         <widget class="QCheckBox" name="rawCB">
-          <property name="maximumSize">
+         <widget class="QGroupBox" name="plotsGB">
+          <property name="minimumSize">
            <size>
-            <width>50</width>
-            <height>16777215</height>
+            <width>330</width>
+            <height>60</height>
            </size>
           </property>
-          <property name="toolTip">
-           <string>View raw input data</string>
+          <property name="title">
+           <string>Displayed plots</string>
           </property>
-          <property name="text">
-           <string>Raw</string>
-          </property>
+          <widget class="QCheckBox" name="rawCB">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>30</y>
+             <width>50</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>View raw input data</string>
+           </property>
+           <property name="text">
+            <string>Raw</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="trendCB">
+           <property name="geometry">
+            <rect>
+             <x>70</x>
+             <y>30</y>
+             <width>71</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>100</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>View input with slow moving variation removed</string>
+           </property>
+           <property name="text">
+            <string>Norm.</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="noiseCB">
+           <property name="geometry">
+            <rect>
+             <x>140</x>
+             <y>30</y>
+             <width>80</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>80</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>View &quot;Input - PEC curve&quot;</string>
+           </property>
+           <property name="text">
+            <string>Residual</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="smoothedCB">
+           <property name="geometry">
+            <rect>
+             <x>230</x>
+             <y>30</y>
+             <width>90</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>90</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>View the PEC curve</string>
+           </property>
+           <property name="text">
+            <string>PEC curve</string>
+           </property>
+          </widget>
          </widget>
         </item>
         <item>
-         <widget class="QCheckBox" name="trendCB">
-          <property name="maximumSize">
+         <widget class="QGroupBox" name="AdjustGB">
+          <property name="minimumSize">
+           <size>
+            <width>270</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Adjust PEC Curve</string>
+          </property>
+          <widget class="QCheckBox" name="linearRegressionCB">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>30</y>
+             <width>95</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Recommended checked. Should the slow-moving variations be removed before analysis</string>
+           </property>
+           <property name="text">
+            <string>Normalize</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="curveFitCB">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>30</y>
+             <width>83</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>120</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Use Curvefit</string>
+           </property>
+           <property name="text">
+            <string>CurveFit</string>
+           </property>
+          </widget>
+          <widget class="QCheckBox" name="invertCB">
+           <property name="geometry">
+            <rect>
+             <x>200</x>
+             <y>30</y>
+             <width>61</width>
+             <height>23</height>
+            </rect>
+           </property>
+           <property name="toolTip">
+            <string>invert the PEC curve</string>
+           </property>
+           <property name="text">
+            <string>Invert</string>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="guiderGB">
+          <property name="minimumSize">
+           <size>
+            <width>220</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Guider details</string>
+          </property>
+          <widget class="QLabel" name="pixelSizeLabel">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>30</y>
+             <width>45</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Guiding image resolution in arcsec-per-pixel</string>
+           </property>
+           <property name="text">
+            <string>a-s/px:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_2">
+           <property name="geometry">
+            <rect>
+             <x>110</x>
+             <y>30</y>
+             <width>20</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>20</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Focal Length</string>
+           </property>
+           <property name="text">
+            <string>FL:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+          <widget class="QLabel" name="focalLengthBox">
+           <property name="geometry">
+            <rect>
+             <x>130</x>
+             <y>30</y>
+             <width>80</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>80</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Focal Length</string>
+           </property>
+           <property name="text">
+            <string>2000</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+          <widget class="QLabel" name="asppBox">
+           <property name="geometry">
+            <rect>
+             <x>60</x>
+             <y>30</y>
+             <width>50</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>50</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>guiding image resolution in arcsec-per-pixel</string>
+           </property>
+           <property name="text">
+            <string>0</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="minimumSize">
            <size>
             <width>100</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>View input with slow moving variation removed</string>
-          </property>
-          <property name="text">
-           <string>Normalized</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="noiseCB">
-          <property name="maximumSize">
-           <size>
-            <width>80</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>View &quot;Input - PEC curve&quot;</string>
-          </property>
-          <property name="text">
-           <string>Residual</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="smoothedCB">
-          <property name="maximumSize">
-           <size>
-            <width>90</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>View the PEC curve</string>
-          </property>
-          <property name="text">
-           <string>PEC curve</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="linearRegressionCB">
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Recommended checked. Should the slow-moving variations be removed before analysis</string>
-          </property>
-          <property name="text">
-           <string>Normalize</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QCheckBox" name="curveFitCB">
-          <property name="maximumSize">
-           <size>
-            <width>120</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Use Curvefit</string>
-          </property>
-          <property name="text">
-           <string>CurveFit</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="pixelSizeLabel">
-          <property name="maximumSize">
-           <size>
-            <width>70</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Guiding image resolution in arcsec-per-pixel</string>
-          </property>
-          <property name="text">
-           <string>a-s/px:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="asppBox">
-          <property name="minimumSize">
-           <size>
-            <width>50</width>
             <height>0</height>
            </size>
           </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
+          <property name="title">
+           <string>RA Worm</string>
           </property>
-          <property name="toolTip">
-           <string>guiding image resolution in arcsec-per-pixel</string>
-          </property>
-          <property name="text">
-           <string></string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_2">
-          <property name="maximumSize">
-           <size>
-            <width>20</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Focal Length</string>
-          </property>
-          <property name="text">
-           <string>FL:</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="focalLengthBox">
-          <property name="minimumSize">
-           <size>
-            <width>80</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>40</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Focal Length</string>
-          </property>
-          <property name="text">
-           <string>2000</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="periodLabel">
-          <property name="maximumSize">
-           <size>
-            <width>50</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Mount's worm gear period in seconds</string>
-          </property>
-          <property name="text">
-           <string>Period</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QSpinBox" name="periodSpinbox">
-          <property name="maximumSize">
-           <size>
-            <width>50</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Mount's worm gear period in seconds</string>
-          </property>
-          <property name="minimum">
-           <number>0</number>
-          </property>
-          <property name="maximum">
-           <number>10000</number>
-          </property>
-          <property name="value">
-           <number>383</number>
-          </property>
+          <widget class="QLabel" name="periodLabel">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>30</y>
+             <width>45</width>
+             <height>21</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Mount's worm gear period in seconds</string>
+           </property>
+           <property name="text">
+            <string>Period</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+          <widget class="QSpinBox" name="periodSpinbox">
+           <property name="geometry">
+            <rect>
+             <x>60</x>
+             <y>30</y>
+             <width>50</width>
+             <height>26</height>
+            </rect>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Mount's worm gear period in seconds</string>
+           </property>
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>10000</number>
+           </property>
+           <property name="value">
+            <number>383</number>
+           </property>
+          </widget>
          </widget>
         </item>
        </layout>
