@@ -38,6 +38,7 @@ struct PECSample
     }
 };
 
+
 //typedef QVector<PECSample> PECData;
 
 class PECData
@@ -79,6 +80,16 @@ class PECData
             maxWormPosition = pData.maxWormPosition;
             wormWrapAround = pData.wormWrapAround;
         }
+        bool invertSignal(bool invert)
+        {
+            if (invert == isInverted || size() <= 0)
+                return isInverted;
+
+            for (int i = 0; i < size(); i++)
+                data[i].signal = - data[i].signal;
+            isInverted = invert;
+            return isInverted;
+        }
 
         bool hasWormPosition = false;
         bool wormIncreasing = false;
@@ -88,7 +99,9 @@ class PECData
 
     private:
         QVector<PECSample> data;
+        bool isInverted = false;
 };
+
 
 struct GraphData
 {

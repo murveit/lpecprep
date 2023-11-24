@@ -12,12 +12,16 @@ class PhdConvert : public QObject
         Q_OBJECT
 
     public:
-        PhdConvert(const QString &filename);
+        PhdConvert();
         ~PhdConvert();
 
         const PECData &getData() const { return data; }
         const Params &getParams() const { return params; }
         double getArcsecPerPixel() const;
+        QStringList getSessions() { return sessions;}
+        void scanFile(const QString &filename);
+        void convert(const QString &filename, int sessionIndex);
+        bool scanSuccess() {return scanLogSuccess;}
 
     public slots:
 
@@ -26,12 +30,13 @@ class PhdConvert : public QObject
     signals:
 
     private:
-        void convert(const QString &filename);
         void processInputLine(const QString &line, RaDec channel);
         void resetData(const QDateTime &startTime);
+        void resetAllData();
         void setColumnIndeces();
         void expandData();
         void findWormPositionDirection();
+        void setSessions(QStringList starts, QVector<double> durations);
 
         // When the guiding session started.
         QDateTime startTime;
@@ -47,9 +52,9 @@ class PhdConvert : public QObject
         bool m_wormWrapAround = false;
         // It just extracts one sequence (the final one) from the file.
         PECData data;
-
         Params params;
-
+        QStringList sessions;
+        bool scanLogSuccess;
 };
 
 #endif // PHDCONVERT
